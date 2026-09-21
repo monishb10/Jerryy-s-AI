@@ -2466,29 +2466,12 @@
     }
 
     // =========================================================
-    // JERRYY'S AI LOCAL LEARNING & EXAM PREPARATION ENGINE
-    // =========================================================
-    const kuramaModal = document.getElementById('kurama-modal');
-    const btnOpenKurama1 = document.getElementById('loopstack-hero-btn');
-    const btnOpenKurama2 = document.getElementById('kurama-status-toggle');
-    const btnCloseKurama = document.getElementById('btn-close-kurama');
-    const btnNewChat = document.getElementById('btn-new-chat');
-    const kuramaChatBody = document.getElementById('kurama-chat-body');
-    const kuramaEmptyState = document.getElementById('kurama-empty-state');
-    const kuramaForm = document.getElementById('kurama-chat-form');
-    const kuramaInput = document.getElementById('kurama-input');
-
-    let chatHistory = [];
-    let currentProfile = localStorage.getItem('jerryys_ai_profile') || 'default';
-    let currentThinkingRow = null;
-
-    // =========================================================
     // SUPABASE GOOGLE AUTHENTICATION & LANDING FLOW
     // =========================================================
     const SUPABASE_URL = "https://swpzterkadvkfuhfmpmy.supabase.co";
     const SUPABASE_KEY = "sb_publishable_qkxvrZxVHlxocpO6QvJL2g_uX3z_E-d";
 
-    const supabase = (window.supabase && typeof window.supabase.createClient === 'function')
+    const supabaseClient = (typeof window !== 'undefined' && window.supabase && typeof window.supabase.createClient === 'function')
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
       : null;
 
@@ -2550,24 +2533,31 @@
       }
     }
 
+    function clearAuthenticatedState() {
+      currentUser = null;
+      try {
+        localStorage.removeItem('jerryys_ai_history');
+      } catch (_) {}
+    }
+
     async function handleGoogleLogin() {
-      if (!supabase) {
+      if (!supabaseClient) {
         showToast('Supabase client not initialized');
         return;
       }
       try {
-        const { error } = await supabase.auth.signInWithOAuth({
+        const { error } = await supabaseClient.auth.signInWithOAuth({
           provider: "google",
           options: {
             redirectTo: window.location.origin
           }
         });
         if (error) {
-          console.error('Google OAuth error:', error);
+          console.error('[AUTH] Google OAuth error:', error);
           showToast('Login error: ' + error.message);
         }
       } catch (err) {
-        console.error('Google sign-in error:', err);
+        console.error('[AUTH] Google sign-in error:', err);
         showToast('Could not open Google login.');
       }
     }
@@ -2576,16 +2566,13 @@
 
     async function handleLogout() {
       try {
-        if (supabase) {
-          await supabase.auth.signOut();
+        if (supabaseClient) {
+          await supabaseClient.auth.signOut();
         }
       } catch (err) {
-        console.error('Logout error:', err);
+        console.error('[AUTH] Logout error:', err);
       } finally {
-        currentUser = null;
-        try {
-          localStorage.removeItem('jerryys_ai_history');
-        } catch (_) {}
+        clearAuthenticatedState();
         showLoginScreen();
         showToast('Signed out');
       }
@@ -2618,33 +2605,35 @@
     // Failsafe: if Supabase auth does not respond within 8 seconds, fallback to login
     const authTimeout = setTimeout(() => {
       if (!authSettled) {
-        console.warn("Supabase auth initialization timed out after 8s; falling back to login screen.");
+        console.error("[AUTH] initialization timed out");
         authSettled = true;
         showLoginScreen();
       }
     }, 8000);
 
     async function initializeAuth() {
-      if (!supabase) {
-        console.error("Supabase client not initialized.");
-        if (!authSettled) {
-          authSettled = true;
-          clearTimeout(authTimeout);
-          showLoginScreen();
-        }
-        return;
-      }
+      console.log("[AUTH] initializeAuth started");
 
       try {
-        const {
-          data: { session } = {},
-          error
-        } = await supabase.auth.getSession();
+        if (!supabaseClient) {
+          console.error("[AUTH] supabaseClient not initialized");
+          if (!authSettled) {
+            authSettled = true;
+            clearTimeout(authTimeout);
+            showLoginScreen();
+          }
+          return;
+        }
+
+        const result = await supabaseClient.auth.getSession();
+        console.log("[AUTH] getSession result:", result);
 
         if (authSettled) return;
 
-        if (error) {
-          console.error("Supabase auth error:", error);
+        const session = result.data?.session;
+
+        if (result.error) {
+          console.error("[AUTH] getSession error:", result.error);
           authSettled = true;
           clearTimeout(authTimeout);
           showLoginScreen();
@@ -2654,20 +2643,22 @@
         authSettled = true;
         clearTimeout(authTimeout);
 
-        if (session && session.user) {
+        if (session?.user) {
+          console.log("[AUTH] user authenticated:", session.user.id);
           showAuthenticatedWelcome(session.user);
         } else {
+          console.log("[AUTH] no active session");
           showLoginScreen();
         }
 
-        // Clean up OAuth hash fragments from URL after Supabase captures session
+        // Clean up OAuth hash fragments if any
         if (window.location.hash && (window.location.hash.includes('access_token=') || window.location.hash.includes('error='))) {
           setTimeout(() => {
             window.history.replaceState(null, '', window.location.pathname + window.location.search);
           }, 150);
         }
       } catch (err) {
-        console.error("Auth initialization failed:", err);
+        console.error("[AUTH] initialization crashed:", err);
         if (!authSettled) {
           authSettled = true;
           clearTimeout(authTimeout);
@@ -2676,20 +2667,21 @@
       }
     }
 
-    // Keep onAuthStateChange listener without infinite loop
-    if (supabase) {
-      supabase.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_IN' || (session && session.user)) {
+    // Single onAuthStateChange listener without infinite loop
+    if (supabaseClient) {
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        console.log("[AUTH] state change:", event);
+
+        if (event === "SIGNED_IN" && session?.user) {
           authSettled = true;
           clearTimeout(authTimeout);
           showAuthenticatedWelcome(session.user);
-        } else if (event === 'SIGNED_OUT' || (!session || !session.user)) {
+        }
+
+        if (event === "SIGNED_OUT") {
           authSettled = true;
           clearTimeout(authTimeout);
-          currentUser = null;
-          try {
-            localStorage.removeItem('jerryys_ai_history');
-          } catch (_) {}
+          clearAuthenticatedState();
           showLoginScreen();
         }
       });

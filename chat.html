@@ -2525,7 +2525,7 @@
     const SUPABASE_URL = "https://swpzterkadvkfuhfmpmy.supabase.co";
     const SUPABASE_KEY = "sb_publishable_qkxvrZxVHlxocpO6QvJL2g_uX3z_E-d";
 
-    const supabase = (window.supabase && typeof window.supabase.createClient === 'function')
+    const supabaseClient = (window.supabase && typeof window.supabase.createClient === 'function')
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
       : null;
 
@@ -2616,9 +2616,9 @@
       let loadedFromSupabase = false;
 
       // Step 2: Query Supabase for this authenticated user's conversations
-      if (supabase) {
+      if (supabaseClient) {
         try {
-          const { data: convs, error: convError } = await supabase
+          const { data: convs, error: convError } = await supabaseClient
             .from('conversations')
             .select('*')
             .eq('user_id', user.id)
@@ -2630,7 +2630,7 @@
             currentChatId = latestConv.id;
 
             // Load only messages belonging to this owned chat and this user
-            const { data: msgs, error: msgError } = await supabase
+            const { data: msgs, error: msgError } = await supabaseClient
               .from('messages')
               .select('*')
               .eq('conversation_id', currentChatId)
@@ -2698,11 +2698,11 @@
     }
 
     async function saveMessageToSupabase(role, content) {
-      if (!supabase || !currentUser || !currentUser.id) return;
+      if (!supabaseClient || !currentUser || !currentUser.id) return;
       try {
         if (!currentChatId) {
           const titleSnippet = content.trim().slice(0, 42) + (content.length > 42 ? '...' : '');
-          const { data: newConv, error: convErr } = await supabase
+          const { data: newConv, error: convErr } = await supabaseClient
             .from('conversations')
             .insert({
               user_id: currentUser.id,
@@ -2719,7 +2719,7 @@
           }
           currentChatId = newConv.id;
         } else {
-          supabase
+          supabaseClient
             .from('conversations')
             .update({ updated_at: new Date().toISOString() })
             .eq('id', currentChatId)
@@ -2727,7 +2727,7 @@
             .then();
         }
 
-        const { error: msgErr } = await supabase
+        const { error: msgErr } = await supabaseClient
           .from('messages')
           .insert({
             conversation_id: currentChatId,
@@ -2749,8 +2749,8 @@
     // =========================================================
     async function handleLogout() {
       try {
-        if (supabase) {
-          await supabase.auth.signOut();
+        if (supabaseClient) {
+          await supabaseClient.auth.signOut();
         }
       } catch (err) {
         console.error('Logout error:', err);
@@ -2801,13 +2801,13 @@
     }, 8000);
 
     async function initChatAuthGuard() {
-      if (!supabase) {
+      if (!supabaseClient) {
         window.location.replace('/');
         return;
       }
 
       try {
-        const { data: { session } = {}, error } = await supabase.auth.getSession();
+        const { data: { session } = {}, error } = await supabaseClient.auth.getSession();
         if (chatAuthSettled) return;
 
         if (error || !session || !session.user) {
@@ -2838,10 +2838,10 @@
       }
     }
 
-    if (supabase) {
+    if (supabaseClient) {
       initChatAuthGuard();
 
-      supabase.auth.onAuthStateChange(async (event, session) => {
+      supabaseClient.auth.onAuthStateChange(async (event, session) => {
         if (!session || !session.user) {
           resetChatState();
           currentUser = null;
