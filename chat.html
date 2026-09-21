@@ -1849,73 +1849,6 @@
         </div>
       </header>
 
-      <!-- Middle Hero Section with Authentication & Welcome States -->
-      <section class="landing-hero-center" id="hero-auth-card">
-        <!-- STATE 1: CHECKING SESSION -->
-        <div id="hero-state-checking" class="hero-state-panel">
-          <div class="landing-kicker">
-            <span class="status-dot-blue"></span>
-            <span>LOCAL LEARNING MODEL</span>
-          </div>
-          <h1 class="landing-title">Jerryy's AI</h1>
-          <p class="landing-desc" style="margin-bottom: 24px;">Connecting to your personal learning assistant...</p>
-          <div class="hero-spinner-row">
-            <div class="hero-spinner"></div>
-          </div>
-        </div>
-
-        <!-- STATE 2: USER NOT LOGGED IN -->
-        <div id="hero-state-logged-out" class="hero-state-panel" style="display: none;">
-          <div class="landing-kicker">
-            <span class="status-dot-blue"></span>
-            <span>LOCAL LEARNING MODEL</span>
-          </div>
-          <h1 class="landing-title">Jerryy's AI</h1>
-          <h2 class="landing-subtitle">Your Personal Local Learning Assistant</h2>
-          <p class="landing-desc">Study, practise coding, prepare for exams,<br>revise concepts and learn with your own AI assistant.</p>
-          <button id="btn-hero-google-login" class="btn-get-started btn-google-landing" type="button" aria-label="Continue with Google">
-            <svg class="google-icon" width="20" height="20" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-            </svg>
-            <span class="btn-text">Continue with Google</span>
-          </button>
-        </div>
-
-        <!-- STATE 3: USER LOGGED IN -->
-        <div id="hero-state-logged-in" class="hero-state-panel" style="display: none;">
-          <div class="landing-user-badge">
-            <img id="hero-user-avatar" class="landing-user-avatar" src="" alt="Google Profile Picture">
-            <div class="landing-kicker" style="margin-bottom: 0;">
-              <span class="status-dot-blue"></span>
-              <span>JERRYY'S AI IS READY</span>
-            </div>
-          </div>
-          <h1 class="landing-title">Welcome, <span id="hero-user-firstname">Learner</span></h1>
-          <h2 class="landing-subtitle">Jerryy's AI is ready.</h2>
-          <p class="landing-desc">Continue learning, revise a topic, practise coding,<br>or start a new conversation.</p>
-          <div class="hero-actions-wrap">
-            <button id="btn-get-started" class="btn-get-started" aria-label="Explore Model">
-              <span class="btn-text">Explore Model</span>
-              <svg class="btn-arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-            </button>
-            <button id="btn-hero-logout" class="hero-logout-btn" type="button" aria-label="Logout">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" y1="12" x2="9" y2="12"></line>
-              </svg>
-              <span>Logout</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
       <!-- Footer Info -->
       <footer class="canvas-footer">
         Jerryy's AI &middot; LOCAL LEARNING MODEL &middot; READY
@@ -2030,7 +1963,7 @@
   <!-- =========================================================
        INTEGRATED JERRYY'S AI BOT MODAL (OVERLAY)
        ========================================================= -->
-  <div id="kurama-modal" class="kurama-modal-overlay">
+  <div id="kurama-modal" class="kurama-modal-overlay open">
     <div class="kurama-modal-card">
       <!-- Header -->
       <div class="kurama-modal-header">
@@ -2570,8 +2503,6 @@
     // JERRYY'S AI LOCAL LEARNING & EXAM PREPARATION ENGINE
     // =========================================================
     const kuramaModal = document.getElementById('kurama-modal');
-    const btnOpenKurama1 = document.getElementById('loopstack-hero-btn');
-    const btnOpenKurama2 = document.getElementById('kurama-status-toggle');
     const btnCloseKurama = document.getElementById('btn-close-kurama');
     const btnNewChat = document.getElementById('btn-new-chat');
     const kuramaChatBody = document.getElementById('kurama-chat-body');
@@ -2583,8 +2514,13 @@
     let currentProfile = localStorage.getItem('jerryys_ai_profile') || 'default';
     let currentThinkingRow = null;
 
+    // Purge any legacy shared un-namespaced chat history
+    try {
+      localStorage.removeItem('jerryys_ai_history');
+    } catch (_) {}
+
     // =========================================================
-    // SUPABASE GOOGLE AUTHENTICATION
+    // SUPABASE GOOGLE AUTHENTICATION & SESSION GUARD
     // =========================================================
     const SUPABASE_URL = "https://swpzterkadvkfuhfmpmy.supabase.co";
     const SUPABASE_KEY = "sb_publishable_qkxvrZxVHlxocpO6QvJL2g_uX3z_E-d";
@@ -2599,112 +2535,11 @@
     const userEmail = document.getElementById('user-email');
     const btnLogout = document.getElementById('btn-logout');
 
-    const stateChecking = document.getElementById('hero-state-checking');
-    const stateLoggedOut = document.getElementById('hero-state-logged-out');
-    const stateLoggedIn = document.getElementById('hero-state-logged-in');
-    const heroUserAvatar = document.getElementById('hero-user-avatar');
-    const heroUserFirstname = document.getElementById('hero-user-firstname');
-    const btnHeroGoogleLogin = document.getElementById('btn-hero-google-login');
-    const btnHeroLogout = document.getElementById('btn-hero-logout');
-
     let currentUser = null;
-    let currentConversationId = null;
+    let currentChatId = null;
 
-    // =========================================================
-    // SUPABASE DATABASE CHAT STORAGE SERVICE
-    // =========================================================
-    async function loadLatestConversationFromSupabase() {
-      if (!supabase || !currentUser) return false;
-      try {
-        const { data: convs, error: convError } = await supabase
-          .from('conversations')
-          .select('*')
-          .eq('user_id', currentUser.id)
-          .order('updated_at', { ascending: false })
-          .limit(1);
-
-        if (convError || !convs || convs.length === 0) {
-          return false;
-        }
-
-        const latestConv = convs[0];
-        currentConversationId = latestConv.id;
-
-        const { data: msgs, error: msgError } = await supabase
-          .from('messages')
-          .select('*')
-          .eq('conversation_id', currentConversationId)
-          .order('created_at', { ascending: true });
-
-        if (msgError || !msgs || msgs.length === 0) {
-          return false;
-        }
-
-        if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
-        chatHistory = [];
-        const rows = kuramaChatBody.querySelectorAll('.chat-row');
-        rows.forEach(r => r.remove());
-
-        msgs.forEach(msg => {
-          chatHistory.push({ role: msg.role, content: msg.content });
-          if (msg.role === 'user') {
-            renderUserMessage(msg.content, false);
-          } else if (msg.role === 'assistant') {
-            renderAssistantMessage(msg.content, false);
-          }
-        });
-        kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
-        return true;
-      } catch (err) {
-        console.warn('Supabase chat load fallback to local:', err);
-        return false;
-      }
-    }
-
-    async function saveMessageToSupabase(role, content) {
-      if (!supabase || !currentUser) return;
-      try {
-        if (!currentConversationId) {
-          const titleSnippet = content.trim().slice(0, 42) + (content.length > 42 ? '...' : '');
-          const { data: newConv, error: convErr } = await supabase
-            .from('conversations')
-            .insert({
-              user_id: currentUser.id,
-              title: titleSnippet,
-              profile: currentProfile || 'default',
-              updated_at: new Date().toISOString()
-            })
-            .select()
-            .single();
-
-          if (convErr || !newConv) {
-            console.warn('Supabase conversation insert skipped:', convErr?.message);
-            return;
-          }
-          currentConversationId = newConv.id;
-        } else {
-          supabase
-            .from('conversations')
-            .update({ updated_at: new Date().toISOString() })
-            .eq('id', currentConversationId)
-            .then();
-        }
-
-        const { error: msgErr } = await supabase
-          .from('messages')
-          .insert({
-            conversation_id: currentConversationId,
-            user_id: currentUser.id,
-            role: role,
-            content: content
-          });
-
-        if (msgErr) {
-          console.warn('Supabase message insert skipped:', msgErr?.message);
-        }
-      } catch (err) {
-        console.warn('Supabase message sync skipped:', err);
-      }
+    function getUserStorageKey(userId) {
+      return `jerryys_ai_history_${userId}`;
     }
 
     function extractUserData(user) {
@@ -2733,104 +2568,185 @@
       return { firstName, fullName, email, avatarUrl };
     }
 
-    function renderAuthState(user) {
-      currentUser = user;
-
-      if (user === undefined) {
-        // STATE 1: CHECKING SESSION
-        if (stateChecking) stateChecking.style.display = 'flex';
-        if (stateLoggedOut) stateLoggedOut.style.display = 'none';
-        if (stateLoggedIn) stateLoggedIn.style.display = 'none';
-        return;
+    // AUTH CHANGE RESET: Reset all in-memory chat state & DOM before loading
+    function resetChatState() {
+      chatHistory = [];
+      currentChatId = null;
+      if (kuramaChatBody) {
+        const rows = kuramaChatBody.querySelectorAll('.chat-row');
+        rows.forEach(r => r.remove());
       }
+      if (kuramaEmptyState) kuramaEmptyState.style.display = 'block';
+      if (kuramaInput) kuramaInput.value = '';
+    }
 
-      if (user) {
-        // STATE 3: USER LOGGED IN
-        const userData = extractUserData(user);
-
-        if (stateChecking) stateChecking.style.display = 'none';
-        if (stateLoggedOut) stateLoggedOut.style.display = 'none';
-        if (stateLoggedIn) stateLoggedIn.style.display = 'flex';
-
-        if (heroUserFirstname) heroUserFirstname.textContent = userData.firstName;
-        if (heroUserAvatar) {
-          heroUserAvatar.src = userData.avatarUrl;
-          heroUserAvatar.alt = userData.fullName;
-        }
-
-        // Modal profile bar
-        if (userName) userName.textContent = userData.fullName;
-        if (userEmail) userEmail.textContent = userData.email;
-        if (userAvatar) {
-          userAvatar.src = userData.avatarUrl;
-          userAvatar.alt = userData.fullName;
-        }
-        if (userProfileBar) userProfileBar.style.display = 'flex';
-
-        // Restore conversations from Supabase, or fall back to local storage
-        loadLatestConversationFromSupabase().then(loaded => {
-          if (!loaded) restoreChatHistory();
-        });
-
-        // Check if URL indicates chat should be opened immediately
-        const urlParams = new URLSearchParams(window.location.search);
-        const isChatPath = window.location.pathname.endsWith('chat.html');
-        if (urlParams.get('chat') === 'open' || urlParams.get('chat') === 'true' || isChatPath) {
-          openKuramaModal(false);
-        }
-      } else {
-        // STATE 2: USER NOT LOGGED IN
-        currentConversationId = null;
-        chatHistory = [];
-
-        if (stateChecking) stateChecking.style.display = 'none';
-        if (stateLoggedOut) stateLoggedOut.style.display = 'flex';
-        if (stateLoggedIn) stateLoggedIn.style.display = 'none';
-
-        if (heroUserFirstname) heroUserFirstname.textContent = '';
-        if (heroUserAvatar) heroUserAvatar.src = '';
+    // Render User Profile information in top bar of the chat card
+    function renderUserProfile(user) {
+      if (!user) {
         if (userName) userName.textContent = '';
         if (userEmail) userEmail.textContent = '';
         if (userAvatar) userAvatar.src = '';
         if (userProfileBar) userProfileBar.style.display = 'none';
-
-        // Close chat modal if open
-        closeKuramaModal(false);
-
-        // AUTH PROTECTION: If logged out and URL has ?chat=open or is chat.html
-        if (window.location.search.includes('chat=open') || window.location.search.includes('chat=true')) {
-          window.history.replaceState(null, '', window.location.pathname);
-        }
-        if (window.location.pathname.endsWith('chat.html')) {
-          window.location.replace('/');
-        }
-      }
-    }
-
-    async function handleGoogleLogin() {
-      if (!supabase) {
-        showToast('Supabase client not initialized');
         return;
       }
-      try {
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: window.location.origin
+      const userData = extractUserData(user);
+      if (userName) userName.textContent = userData.fullName;
+      if (userEmail) userEmail.textContent = userData.email;
+      if (userAvatar) {
+        userAvatar.src = userData.avatarUrl;
+        userAvatar.alt = userData.fullName;
+      }
+      if (userProfileBar) userProfileBar.style.display = 'flex';
+    }
+
+    // =========================================================
+    // PER-USER ISOLATED CHAT STORAGE (SUPABASE AS PRIMARY TRUTH)
+    // =========================================================
+    async function loadUserChats(user) {
+      if (!user || !user.id) {
+        resetChatState();
+        return;
+      }
+
+      // Step 1: Immediately clear previous chat state and DOM
+      resetChatState();
+      currentUser = user;
+      renderUserProfile(user);
+
+      let loadedFromSupabase = false;
+
+      // Step 2: Query Supabase for this authenticated user's conversations
+      if (supabase) {
+        try {
+          const { data: convs, error: convError } = await supabase
+            .from('conversations')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('updated_at', { ascending: false })
+            .limit(1);
+
+          if (!convError && convs && convs.length > 0) {
+            const latestConv = convs[0];
+            currentChatId = latestConv.id;
+
+            // Load only messages belonging to this owned chat and this user
+            const { data: msgs, error: msgError } = await supabase
+              .from('messages')
+              .select('*')
+              .eq('conversation_id', currentChatId)
+              .eq('user_id', user.id)
+              .order('created_at', { ascending: true });
+
+            if (!msgError && msgs && msgs.length > 0) {
+              chatHistory = [];
+              msgs.forEach(msg => {
+                chatHistory.push({ role: msg.role, content: msg.content });
+                if (msg.role === 'user') {
+                  renderUserMessage(msg.content, false);
+                } else if (msg.role === 'assistant') {
+                  renderAssistantMessage(msg.content, false);
+                }
+              });
+              if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
+              kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+              // Cache only in user-specific namespaced storage
+              try {
+                localStorage.setItem(getUserStorageKey(user.id), JSON.stringify(chatHistory));
+              } catch (_) {}
+              loadedFromSupabase = true;
+            }
           }
-        });
-        if (error) {
-          console.error('Google OAuth error:', error);
-          showToast('Login error: ' + error.message);
+        } catch (err) {
+          console.warn('Supabase chat load error:', err);
         }
-      } catch (err) {
-        console.error('Google sign-in error:', err);
-        showToast('Could not open Google login.');
+      }
+
+      // Step 3: If not found in Supabase (e.g. database schema not applied yet),
+      // recover strictly from this user's namespaced local storage.
+      if (!loadedFromSupabase) {
+        try {
+          const userKey = getUserStorageKey(user.id);
+          const raw = localStorage.getItem(userKey);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              chatHistory = parsed;
+              if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
+              chatHistory.forEach(msg => {
+                if (msg.role === 'user') {
+                  renderUserMessage(msg.content, false);
+                } else if (msg.role === 'assistant') {
+                  renderAssistantMessage(msg.content, false);
+                }
+              });
+              kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+            }
+          }
+        } catch (err) {
+          console.warn('Local namespaced recovery load error:', err);
+        }
       }
     }
 
-    if (btnHeroGoogleLogin) btnHeroGoogleLogin.addEventListener('click', handleGoogleLogin);
+    function saveChatHistory() {
+      if (!currentUser || !currentUser.id) return;
+      try {
+        localStorage.setItem(getUserStorageKey(currentUser.id), JSON.stringify(chatHistory));
+      } catch (err) {
+        console.warn('Could not save user history:', err);
+      }
+    }
 
+    async function saveMessageToSupabase(role, content) {
+      if (!supabase || !currentUser || !currentUser.id) return;
+      try {
+        if (!currentChatId) {
+          const titleSnippet = content.trim().slice(0, 42) + (content.length > 42 ? '...' : '');
+          const { data: newConv, error: convErr } = await supabase
+            .from('conversations')
+            .insert({
+              user_id: currentUser.id,
+              title: titleSnippet,
+              profile: currentProfile || 'default',
+              updated_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+          if (convErr || !newConv) {
+            console.warn('Supabase conversation insert skipped:', convErr?.message);
+            return;
+          }
+          currentChatId = newConv.id;
+        } else {
+          supabase
+            .from('conversations')
+            .update({ updated_at: new Date().toISOString() })
+            .eq('id', currentChatId)
+            .eq('user_id', currentUser.id)
+            .then();
+        }
+
+        const { error: msgErr } = await supabase
+          .from('messages')
+          .insert({
+            conversation_id: currentChatId,
+            user_id: currentUser.id,
+            role: role,
+            content: content
+          });
+
+        if (msgErr) {
+          console.warn('Supabase message insert skipped:', msgErr?.message);
+        }
+      } catch (err) {
+        console.warn('Supabase message sync skipped:', err);
+      }
+    }
+
+    // =========================================================
+    // LOGOUT HANDLER
+    // =========================================================
     async function handleLogout() {
       try {
         if (supabase) {
@@ -2839,107 +2755,86 @@
       } catch (err) {
         console.error('Logout error:', err);
       } finally {
-        renderAuthState(null);
-        showToast('Signed out');
+        resetChatState();
+        currentUser = null;
+        renderUserProfile(null);
+        try {
+          localStorage.removeItem('jerryys_ai_history');
+        } catch (_) {}
+        window.location.href = '/';
       }
     }
 
-    if (btnHeroLogout) btnHeroLogout.addEventListener('click', handleLogout);
     if (btnLogout) btnLogout.addEventListener('click', handleLogout);
 
-    function openKuramaModal(updateUrl = true) {
-      if (!currentUser) {
-        renderAuthState(null);
-        return;
-      }
-      if (kuramaModal) {
-        kuramaModal.classList.add('open');
-        if (kuramaInput) setTimeout(() => kuramaInput.focus(), 150);
-      }
-      if (updateUrl) {
-        const url = new URL(window.location);
-        url.searchParams.set('chat', 'open');
-        window.history.pushState({ chat: true }, '', url.pathname + url.search);
-      }
+    // =========================================================
+    // BACK / CLOSE BEHAVIOR (Returns to / without logging out)
+    // =========================================================
+    function navigateBackToWelcome() {
+      window.location.href = '/';
     }
 
-    function closeKuramaModal(updateUrl = true) {
-      if (kuramaModal) {
-        kuramaModal.classList.remove('open');
-      }
-      if (window.location.pathname.endsWith('chat.html')) {
-        window.location.href = '/';
-        return;
-      }
-      if (updateUrl) {
-        const url = new URL(window.location);
-        url.searchParams.delete('chat');
-        window.history.pushState({ chat: false }, '', url.pathname + (url.search ? url.search : ''));
-      }
-    }
-
-    if (btnGetStarted) {
-      btnGetStarted.addEventListener('click', (e) => {
-        e.preventDefault();
-        openKuramaModal(true);
-      });
-    }
-
-    if (btnOpenKurama1) btnOpenKurama1.addEventListener('click', () => openKuramaModal(true));
-    if (btnOpenKurama2) btnOpenKurama2.addEventListener('click', () => openKuramaModal(true));
-    if (btnCloseKurama) btnCloseKurama.addEventListener('click', () => closeKuramaModal(true));
+    if (btnCloseKurama) btnCloseKurama.addEventListener('click', navigateBackToWelcome);
 
     if (kuramaModal) {
       kuramaModal.addEventListener('click', (e) => {
-        if (e.target === kuramaModal) closeKuramaModal(true);
+        if (e.target === kuramaModal) navigateBackToWelcome();
       });
     }
 
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && kuramaModal && kuramaModal.classList.contains('open')) {
-        closeKuramaModal(true);
+      if (e.key === 'Escape') {
+        navigateBackToWelcome();
       }
     });
 
-    // Auto-open chat if ?chat=open or ?chat=true is in URL on load
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('chat') === 'open' || urlParams.get('chat') === 'true') {
-      setTimeout(() => {
-        if (currentUser) openKuramaModal(false);
-      }, 200);
-    }
+    // =========================================================
+    // CHAT PAGE AUTH GUARD & SESSION RESTORATION
+    // =========================================================
+    async function initChatAuthGuard() {
+      if (!supabase) {
+        window.location.replace('/');
+        return;
+      }
 
-    // Initialize Supabase Auth listeners and session restoration
-    if (supabase) {
-      // STATE 1: Start checking session
-      renderAuthState(undefined);
-
-      supabase.auth.onAuthStateChange((event, session) => {
-        if (session && session.user) {
-          renderAuthState(session.user);
-        } else {
-          renderAuthState(null);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error || !session || !session.user) {
+          window.location.replace('/');
+          return;
         }
-      });
 
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session && session.user) {
-          renderAuthState(session.user);
-        } else {
-          renderAuthState(null);
-        }
-        // Clean up OAuth hash fragments from URL after Supabase captures session
+        await loadUserChats(session.user);
+
+        // Clean up OAuth hash fragments if any
         if (window.location.hash && (window.location.hash.includes('access_token=') || window.location.hash.includes('error='))) {
           setTimeout(() => {
             window.history.replaceState(null, '', window.location.pathname + window.location.search);
           }, 150);
         }
-      }).catch(err => {
-        console.warn('Session check failed:', err);
-        renderAuthState(null);
+      } catch (err) {
+        console.warn('Auth guard check failed:', err);
+        window.location.replace('/');
+      }
+    }
+
+    if (supabase) {
+      initChatAuthGuard();
+
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        if (!session || !session.user) {
+          resetChatState();
+          currentUser = null;
+          renderUserProfile(null);
+          window.location.replace('/');
+          return;
+        }
+        if (!currentUser || currentUser.id !== session.user.id) {
+          await loadUserChats(session.user);
+        }
       });
     } else {
-      renderAuthState(null);
+      window.location.replace('/');
     }
 
     // Profile selector handling
@@ -2964,17 +2859,14 @@
     // New Chat handler
     if (btnNewChat) {
       btnNewChat.addEventListener('click', () => {
-        chatHistory = [];
-        currentConversationId = null;
-        try {
-          localStorage.removeItem('jerryys_ai_history');
-        } catch (_) {}
-        const rows = kuramaChatBody.querySelectorAll('.chat-row');
-        rows.forEach(r => r.remove());
-        if (kuramaEmptyState) kuramaEmptyState.style.display = 'block';
-        kuramaInput.value = '';
-        kuramaInput.focus();
+        resetChatState();
+        if (currentUser && currentUser.id) {
+          try {
+            localStorage.removeItem(getUserStorageKey(currentUser.id));
+          } catch (_) {}
+        }
         showToast('Started new chat');
+        if (kuramaInput) kuramaInput.focus();
       });
     }
 
@@ -3000,39 +2892,6 @@
       kuramaInput.value = '';
       handleUserPrompt(query);
     });
-
-    // Restore history from localStorage
-    function restoreChatHistory() {
-      try {
-        const raw = localStorage.getItem('jerryys_ai_history');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            chatHistory = parsed;
-            if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
-            chatHistory.forEach(msg => {
-              if (msg.role === 'user') {
-                renderUserMessage(msg.content, false);
-              } else if (msg.role === 'assistant') {
-                renderAssistantMessage(msg.content, false);
-              }
-            });
-            kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
-          }
-        }
-      } catch (err) {
-        console.warn('Could not restore chat history:', err);
-      }
-    }
-    restoreChatHistory();
-
-    function saveChatHistory() {
-      try {
-        localStorage.setItem('jerryys_ai_history', JSON.stringify(chatHistory));
-      } catch (err) {
-        console.warn('Could not save chat history:', err);
-      }
-    }
 
     // Configure DOMPurify hook to open external links safely in new tab
     if (typeof DOMPurify !== 'undefined') {

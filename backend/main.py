@@ -161,6 +161,17 @@ async def serve_root():
     raise HTTPException(status_code=404, detail="index.html not found")
 
 
+@app.get("/chat")
+async def serve_chat():
+    fe_chat = FRONTEND_DIR / "chat.html"
+    if fe_chat.exists() and fe_chat.is_file():
+        return FileResponse(fe_chat)
+    root_chat = BASE_DIR / "chat.html"
+    if root_chat.exists() and root_chat.is_file():
+        return FileResponse(root_chat)
+    raise HTTPException(status_code=404, detail="chat.html not found")
+
+
 @app.get("/{filename}.html")
 async def serve_html_file(filename: str):
     fe_file = FRONTEND_DIR / f"{filename}.html"

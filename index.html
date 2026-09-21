@@ -2027,107 +2027,6 @@
     <div id="cursor-ring" class="cursor-ring-outline"></div>
   </div>
 
-  <!-- =========================================================
-       INTEGRATED JERRYY'S AI BOT MODAL (OVERLAY)
-       ========================================================= -->
-  <div id="kurama-modal" class="kurama-modal-overlay">
-    <div class="kurama-modal-card">
-      <!-- Header -->
-      <div class="kurama-modal-header">
-        <div class="kurama-modal-title">
-          <div class="kurama-mini-orb"></div>
-          <div>
-            <div class="kurama-title-text">Jerryy's AI</div>
-            <div class="kurama-sub-text">LOCAL LEARNING MODEL</div>
-          </div>
-        </div>
-        <div class="modal-header-actions">
-          <button id="btn-new-chat" class="btn-new-chat" title="Start a New Conversation" aria-label="New Chat">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            <span>New Chat</span>
-          </button>
-          <a href="overview.html" class="modal-overview-link" title="Open Platform Overview">
-            <span>Overview</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="7" y1="17" x2="17" y2="7"></line>
-              <polyline points="7 7 17 7 17 17"></polyline>
-            </svg>
-          </a>
-          <div id="ollama-status-badge" class="canvas-status" style="background: rgba(57,255,20,0.1); border-color: rgba(57,255,20,0.3); color: #39FF14;">
-            <span class="badge-dot" style="background:#39FF14; box-shadow: 0 0 10px #39FF14; width:6px; height:6px; border-radius:50%;"></span>
-            <span id="ollama-status-text">OLLAMA ONLINE</span>
-          </div>
-          <button id="btn-close-kurama" class="btn-close-modal" aria-label="Close Jerryy's AI Dialog">×</button>
-        </div>
-      </div>
-
-      <!-- Logged-in User Profile Bar -->
-      <div class="user-profile-bar" id="user-profile-bar" style="display: none;">
-        <div class="user-profile-info">
-          <img id="user-avatar" class="user-avatar" src="" alt="Google Profile Picture">
-          <div class="user-details">
-            <span id="user-name" class="user-name">User</span>
-            <span id="user-email" class="user-email">user@example.com</span>
-          </div>
-        </div>
-        <button id="btn-logout" class="btn-logout" type="button" aria-label="Logout">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-            <polyline points="16 17 21 12 16 7"></polyline>
-            <line x1="21" y1="12" x2="9" y2="12"></line>
-          </svg>
-          <span>Logout</span>
-        </button>
-      </div>
-
-      <!-- Mode / Profile Selector Bar -->
-      <div class="profile-selector-container">
-        <span class="profile-selector-label">Mode:</span>
-        <div class="profile-selector" id="profile-selector">
-          <button type="button" class="profile-pill active" data-profile="default">General</button>
-          <button type="button" class="profile-pill" data-profile="exam">Exam Prep</button>
-          <button type="button" class="profile-pill" data-profile="dbms">DBMS</button>
-          <button type="button" class="profile-pill" data-profile="programming">Programming</button>
-          <button type="button" class="profile-pill" data-profile="study_support">Study Support</button>
-        </div>
-      </div>
-
-      <!-- Chat Body -->
-      <div class="kurama-modal-body" id="kurama-chat-body">
-        <div class="kurama-empty-state" id="kurama-empty-state">
-          <div class="kurama-empty-tag">LOCAL LEARNING MODEL</div>
-          <h2 class="kurama-empty-title">What do you want to learn?</h2>
-          <p class="kurama-empty-sub">Ask a question, prepare for an exam, practise coding, revise a topic, or test your understanding.</p>
-
-          <div class="kurama-chips-grid">
-            <button type="button" class="kurama-chip" data-prompt="Teach me this topic step by step using a realistic example.">Learn</button>
-            <button type="button" class="kurama-chip" data-prompt="Help me prepare this topic for my exam.">Exam Prep</button>
-            <button type="button" class="kurama-chip" data-prompt="Quiz me one question at a time.">Quiz Me</button>
-            <button type="button" class="kurama-chip" data-prompt="Give me a quick revision of this topic.">Revision</button>
-            <button type="button" class="kurama-chip" data-prompt="Help me solve and understand this programming problem.">Programming</button>
-            <button type="button" class="kurama-chip" data-prompt="Explain this in very simple English with one realistic example.">Explain Simply</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Chat Input Footer -->
-      <div class="kurama-modal-footer">
-        <form class="kurama-input-form" id="kurama-chat-form">
-          <textarea id="kurama-input" class="kurama-text-input" rows="1" placeholder="Ask Jerryy's AI anything..."></textarea>
-          <button type="submit" class="btn-send-prompt" aria-label="Send prompt">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-              <polyline points="12 5 19 12 12 19"></polyline>
-            </svg>
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
-
   <!-- Toast Notification -->
   <div id="toast-pill" class="toast-pill">Copied to clipboard</div>
 
@@ -2584,7 +2483,7 @@
     let currentThinkingRow = null;
 
     // =========================================================
-    // SUPABASE GOOGLE AUTHENTICATION
+    // SUPABASE GOOGLE AUTHENTICATION & LANDING FLOW
     // =========================================================
     const SUPABASE_URL = "https://swpzterkadvkfuhfmpmy.supabase.co";
     const SUPABASE_KEY = "sb_publishable_qkxvrZxVHlxocpO6QvJL2g_uX3z_E-d";
@@ -2592,12 +2491,6 @@
     const supabase = (window.supabase && typeof window.supabase.createClient === 'function')
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
       : null;
-
-    const userProfileBar = document.getElementById('user-profile-bar');
-    const userAvatar = document.getElementById('user-avatar');
-    const userName = document.getElementById('user-name');
-    const userEmail = document.getElementById('user-email');
-    const btnLogout = document.getElementById('btn-logout');
 
     const stateChecking = document.getElementById('hero-state-checking');
     const stateLoggedOut = document.getElementById('hero-state-logged-out');
@@ -2608,104 +2501,6 @@
     const btnHeroLogout = document.getElementById('btn-hero-logout');
 
     let currentUser = null;
-    let currentConversationId = null;
-
-    // =========================================================
-    // SUPABASE DATABASE CHAT STORAGE SERVICE
-    // =========================================================
-    async function loadLatestConversationFromSupabase() {
-      if (!supabase || !currentUser) return false;
-      try {
-        const { data: convs, error: convError } = await supabase
-          .from('conversations')
-          .select('*')
-          .eq('user_id', currentUser.id)
-          .order('updated_at', { ascending: false })
-          .limit(1);
-
-        if (convError || !convs || convs.length === 0) {
-          return false;
-        }
-
-        const latestConv = convs[0];
-        currentConversationId = latestConv.id;
-
-        const { data: msgs, error: msgError } = await supabase
-          .from('messages')
-          .select('*')
-          .eq('conversation_id', currentConversationId)
-          .order('created_at', { ascending: true });
-
-        if (msgError || !msgs || msgs.length === 0) {
-          return false;
-        }
-
-        if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
-        chatHistory = [];
-        const rows = kuramaChatBody.querySelectorAll('.chat-row');
-        rows.forEach(r => r.remove());
-
-        msgs.forEach(msg => {
-          chatHistory.push({ role: msg.role, content: msg.content });
-          if (msg.role === 'user') {
-            renderUserMessage(msg.content, false);
-          } else if (msg.role === 'assistant') {
-            renderAssistantMessage(msg.content, false);
-          }
-        });
-        kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
-        return true;
-      } catch (err) {
-        console.warn('Supabase chat load fallback to local:', err);
-        return false;
-      }
-    }
-
-    async function saveMessageToSupabase(role, content) {
-      if (!supabase || !currentUser) return;
-      try {
-        if (!currentConversationId) {
-          const titleSnippet = content.trim().slice(0, 42) + (content.length > 42 ? '...' : '');
-          const { data: newConv, error: convErr } = await supabase
-            .from('conversations')
-            .insert({
-              user_id: currentUser.id,
-              title: titleSnippet,
-              profile: currentProfile || 'default',
-              updated_at: new Date().toISOString()
-            })
-            .select()
-            .single();
-
-          if (convErr || !newConv) {
-            console.warn('Supabase conversation insert skipped:', convErr?.message);
-            return;
-          }
-          currentConversationId = newConv.id;
-        } else {
-          supabase
-            .from('conversations')
-            .update({ updated_at: new Date().toISOString() })
-            .eq('id', currentConversationId)
-            .then();
-        }
-
-        const { error: msgErr } = await supabase
-          .from('messages')
-          .insert({
-            conversation_id: currentConversationId,
-            user_id: currentUser.id,
-            role: role,
-            content: content
-          });
-
-        if (msgErr) {
-          console.warn('Supabase message insert skipped:', msgErr?.message);
-        }
-      } catch (err) {
-        console.warn('Supabase message sync skipped:', err);
-      }
-    }
 
     function extractUserData(user) {
       if (!user) return { firstName: '', fullName: '', email: '', avatarUrl: '' };
@@ -2757,53 +2552,14 @@
           heroUserAvatar.src = userData.avatarUrl;
           heroUserAvatar.alt = userData.fullName;
         }
-
-        // Modal profile bar
-        if (userName) userName.textContent = userData.fullName;
-        if (userEmail) userEmail.textContent = userData.email;
-        if (userAvatar) {
-          userAvatar.src = userData.avatarUrl;
-          userAvatar.alt = userData.fullName;
-        }
-        if (userProfileBar) userProfileBar.style.display = 'flex';
-
-        // Restore conversations from Supabase, or fall back to local storage
-        loadLatestConversationFromSupabase().then(loaded => {
-          if (!loaded) restoreChatHistory();
-        });
-
-        // Check if URL indicates chat should be opened immediately
-        const urlParams = new URLSearchParams(window.location.search);
-        const isChatPath = window.location.pathname.endsWith('chat.html');
-        if (urlParams.get('chat') === 'open' || urlParams.get('chat') === 'true' || isChatPath) {
-          openKuramaModal(false);
-        }
       } else {
         // STATE 2: USER NOT LOGGED IN
-        currentConversationId = null;
-        chatHistory = [];
-
         if (stateChecking) stateChecking.style.display = 'none';
         if (stateLoggedOut) stateLoggedOut.style.display = 'flex';
         if (stateLoggedIn) stateLoggedIn.style.display = 'none';
 
         if (heroUserFirstname) heroUserFirstname.textContent = '';
         if (heroUserAvatar) heroUserAvatar.src = '';
-        if (userName) userName.textContent = '';
-        if (userEmail) userEmail.textContent = '';
-        if (userAvatar) userAvatar.src = '';
-        if (userProfileBar) userProfileBar.style.display = 'none';
-
-        // Close chat modal if open
-        closeKuramaModal(false);
-
-        // AUTH PROTECTION: If logged out and URL has ?chat=open or is chat.html
-        if (window.location.search.includes('chat=open') || window.location.search.includes('chat=true')) {
-          window.history.replaceState(null, '', window.location.pathname);
-        }
-        if (window.location.pathname.endsWith('chat.html')) {
-          window.location.replace('/');
-        }
       }
     }
 
@@ -2839,75 +2595,33 @@
       } catch (err) {
         console.error('Logout error:', err);
       } finally {
+        currentUser = null;
+        try {
+          localStorage.removeItem('jerryys_ai_history');
+        } catch (_) {}
         renderAuthState(null);
         showToast('Signed out');
       }
     }
 
     if (btnHeroLogout) btnHeroLogout.addEventListener('click', handleLogout);
-    if (btnLogout) btnLogout.addEventListener('click', handleLogout);
 
-    function openKuramaModal(updateUrl = true) {
-      if (!currentUser) {
-        renderAuthState(null);
-        return;
-      }
-      if (kuramaModal) {
-        kuramaModal.classList.add('open');
-        if (kuramaInput) setTimeout(() => kuramaInput.focus(), 150);
-      }
-      if (updateUrl) {
-        const url = new URL(window.location);
-        url.searchParams.set('chat', 'open');
-        window.history.pushState({ chat: true }, '', url.pathname + url.search);
-      }
-    }
-
-    function closeKuramaModal(updateUrl = true) {
-      if (kuramaModal) {
-        kuramaModal.classList.remove('open');
-      }
-      if (window.location.pathname.endsWith('chat.html')) {
-        window.location.href = '/';
-        return;
-      }
-      if (updateUrl) {
-        const url = new URL(window.location);
-        url.searchParams.delete('chat');
-        window.history.pushState({ chat: false }, '', url.pathname + (url.search ? url.search : ''));
-      }
-    }
-
+    // EXPLORE MODEL: Navigate to separate /chat page
     if (btnGetStarted) {
       btnGetStarted.addEventListener('click', (e) => {
         e.preventDefault();
-        openKuramaModal(true);
+        if (!currentUser) {
+          renderAuthState(null);
+          return;
+        }
+        window.location.href = '/chat';
       });
     }
 
-    if (btnOpenKurama1) btnOpenKurama1.addEventListener('click', () => openKuramaModal(true));
-    if (btnOpenKurama2) btnOpenKurama2.addEventListener('click', () => openKuramaModal(true));
-    if (btnCloseKurama) btnCloseKurama.addEventListener('click', () => closeKuramaModal(true));
-
-    if (kuramaModal) {
-      kuramaModal.addEventListener('click', (e) => {
-        if (e.target === kuramaModal) closeKuramaModal(true);
-      });
-    }
-
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && kuramaModal && kuramaModal.classList.contains('open')) {
-        closeKuramaModal(true);
-      }
-    });
-
-    // Auto-open chat if ?chat=open or ?chat=true is in URL on load
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('chat') === 'open' || urlParams.get('chat') === 'true') {
-      setTimeout(() => {
-        if (currentUser) openKuramaModal(false);
-      }, 200);
-    }
+    const btnOpenKurama1 = document.getElementById('loopstack-hero-btn');
+    const btnOpenKurama2 = document.getElementById('kurama-status-toggle');
+    if (btnOpenKurama1) btnOpenKurama1.addEventListener('click', () => { window.location.href = '/chat'; });
+    if (btnOpenKurama2) btnOpenKurama2.addEventListener('click', () => { window.location.href = '/chat'; });
 
     // Initialize Supabase Auth listeners and session restoration
     if (supabase) {
@@ -2940,263 +2654,6 @@
       });
     } else {
       renderAuthState(null);
-    }
-
-    // Profile selector handling
-    const profilePills = document.querySelectorAll('.profile-pill');
-    function initProfileUI() {
-      profilePills.forEach(pill => {
-        if (pill.dataset.profile === currentProfile) {
-          pill.classList.add('active');
-        } else {
-          pill.classList.remove('active');
-        }
-        pill.addEventListener('click', () => {
-          profilePills.forEach(p => p.classList.remove('active'));
-          pill.classList.add('active');
-          currentProfile = pill.dataset.profile;
-          localStorage.setItem('jerryys_ai_profile', currentProfile);
-        });
-      });
-    }
-    initProfileUI();
-
-    // New Chat handler
-    if (btnNewChat) {
-      btnNewChat.addEventListener('click', () => {
-        chatHistory = [];
-        currentConversationId = null;
-        try {
-          localStorage.removeItem('jerryys_ai_history');
-        } catch (_) {}
-        const rows = kuramaChatBody.querySelectorAll('.chat-row');
-        rows.forEach(r => r.remove());
-        if (kuramaEmptyState) kuramaEmptyState.style.display = 'block';
-        kuramaInput.value = '';
-        kuramaInput.focus();
-        showToast('Started new chat');
-      });
-    }
-
-    // Quick chip buttons
-    document.querySelectorAll('.kurama-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        handleUserPrompt(chip.dataset.prompt);
-      });
-    });
-
-    // Input handlers: Enter to send, Shift+Enter for new line
-    kuramaInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        kuramaForm.dispatchEvent(new Event('submit'));
-      }
-    });
-
-    kuramaForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const query = kuramaInput.value.trim();
-      if (!query) return;
-      kuramaInput.value = '';
-      handleUserPrompt(query);
-    });
-
-    // Restore history from localStorage
-    function restoreChatHistory() {
-      try {
-        const raw = localStorage.getItem('jerryys_ai_history');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            chatHistory = parsed;
-            if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
-            chatHistory.forEach(msg => {
-              if (msg.role === 'user') {
-                renderUserMessage(msg.content, false);
-              } else if (msg.role === 'assistant') {
-                renderAssistantMessage(msg.content, false);
-              }
-            });
-            kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
-          }
-        }
-      } catch (err) {
-        console.warn('Could not restore chat history:', err);
-      }
-    }
-    restoreChatHistory();
-
-    function saveChatHistory() {
-      try {
-        localStorage.setItem('jerryys_ai_history', JSON.stringify(chatHistory));
-      } catch (err) {
-        console.warn('Could not save chat history:', err);
-      }
-    }
-
-    // Configure DOMPurify hook to open external links safely in new tab
-    if (typeof DOMPurify !== 'undefined') {
-      DOMPurify.addHook('afterSanitizeAttributes', function (node) {
-        if ('target' in node) {
-          node.setAttribute('target', '_blank');
-          node.setAttribute('rel', 'noopener noreferrer');
-        }
-      });
-    }
-
-    // Markdown rendering with marked + DOMPurify sanitization
-    function renderMarkdown(markdown) {
-      if (!markdown) return '';
-      if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
-        if (typeof marked.setOptions === 'function') {
-          marked.setOptions({
-            gfm: true,
-            breaks: true
-          });
-        }
-        let rawHtml = marked.parse(markdown);
-        // Wrap tables in responsive container for smooth horizontal scrolling
-        rawHtml = rawHtml.replace(/<table(\s*[^>]*)>([\s\S]*?)<\/table>/gi, '<div class="table-wrapper"><table$1>$2</table></div>');
-        return DOMPurify.sanitize(rawHtml, {
-          ADD_ATTR: ['target', 'rel']
-        });
-      }
-      // Safe fallback if CDN scripts fail to load
-      const esc = (str) => str.replace(/[&<>"']/g, (m) => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-      }[m]));
-      return `<p>${esc(markdown).replace(/\n/g, '<br>')}</p>`;
-    }
-
-    function renderUserMessage(text, scroll = true) {
-      const row = document.createElement('div');
-      row.className = 'chat-row user';
-      const bubble = document.createElement('div');
-      bubble.className = 'chat-bubble-user';
-      bubble.textContent = text;
-      row.appendChild(bubble);
-      kuramaChatBody.appendChild(row);
-      if (scroll) kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
-    }
-
-    function renderAssistantMessage(text, scroll = true) {
-      const row = document.createElement('div');
-      row.className = 'chat-row bot';
-      const bubble = document.createElement('div');
-      bubble.className = 'chat-bubble-bot';
-
-      const header = document.createElement('div');
-      header.className = 'bot-message-header';
-      header.innerHTML = `<span class="badge-dot" style="background:#39FF14; width:6px; height:6px; border-radius:50%; display:inline-block; box-shadow:0 0 8px #39FF14;"></span> Jerryy's AI`;
-
-      const replyBody = document.createElement('div');
-      replyBody.className = 'bot-reply-text';
-      replyBody.innerHTML = renderMarkdown(text);
-
-      bubble.appendChild(header);
-      bubble.appendChild(replyBody);
-      row.appendChild(bubble);
-      kuramaChatBody.appendChild(row);
-      if (scroll) kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
-    }
-
-    function renderErrorMessage(text) {
-      const row = document.createElement('div');
-      row.className = 'chat-row bot';
-      const bubble = document.createElement('div');
-      bubble.className = 'error-bubble';
-      bubble.textContent = text;
-      row.appendChild(bubble);
-      kuramaChatBody.appendChild(row);
-      kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
-    }
-
-    function showThinking() {
-      if (currentThinkingRow) return;
-      const row = document.createElement('div');
-      row.className = 'chat-row bot';
-      row.innerHTML = `
-        <div class="thinking-bubble">
-          <span>Jerryy's AI is thinking</span>
-          <div class="thinking-dots">
-            <span class="thinking-dot"></span>
-            <span class="thinking-dot"></span>
-            <span class="thinking-dot"></span>
-          </div>
-        </div>
-      `;
-      kuramaChatBody.appendChild(row);
-      kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
-      currentThinkingRow = row;
-    }
-
-    function hideThinking() {
-      if (currentThinkingRow) {
-        currentThinkingRow.remove();
-        currentThinkingRow = null;
-      }
-    }
-
-    async function handleUserPrompt(promptText) {
-      const cleanPrompt = promptText.trim();
-      if (!cleanPrompt) return;
-
-      if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
-
-      // 1. Render User Message
-      renderUserMessage(cleanPrompt, true);
-
-      // 2. Capture history to send (most recent 12 prior messages)
-      const historyToSend = chatHistory.slice(-12);
-
-      // 3. Append user message to history & save
-      chatHistory.push({ role: 'user', content: cleanPrompt });
-      saveChatHistory();
-      saveMessageToSupabase('user', cleanPrompt);
-
-      // 4. Show thinking indicator
-      showThinking();
-
-      // 5. Send POST to /api/chat
-      try {
-        const res = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: cleanPrompt,
-            history: historyToSend,
-            profile: currentProfile
-          })
-        });
-
-        hideThinking();
-
-        if (res.ok) {
-          const data = await res.json();
-          const reply = data.reply || '';
-          chatHistory.push({ role: 'assistant', content: reply });
-          saveChatHistory();
-          saveMessageToSupabase('assistant', reply);
-          renderAssistantMessage(reply, true);
-        } else {
-          let errDetail = '';
-          try {
-            const errJson = await res.json();
-            errDetail = errJson.detail || '';
-          } catch (_) {}
-
-          let userMsg = "Jerryy's AI could not connect to the local model. Make sure Ollama is running.";
-          if (res.status === 404 || errDetail.includes('not available in Ollama')) {
-            userMsg = "The jerryys-ai model is not available in Ollama.";
-          } else if (errDetail) {
-            userMsg = errDetail;
-          }
-          renderErrorMessage(userMsg);
-        }
-      } catch (err) {
-        hideThinking();
-        renderErrorMessage("Jerryy's AI could not connect to the local model. Make sure Ollama is running.");
-      }
     }
 
     // Health check on load
