@@ -1,4 +1,4 @@
-# Color_AI
+# Jerryy's AI
 
 > **Jerryy's AI** — Autonomous AI Exam Preparation Model & Interactive 3D WebGL Studio.
 
@@ -79,16 +79,20 @@ The API will be available at:
 ## 📂 Project Structure
 
 ```text
-Color_AI/
+Jerryy-s-AI/
 ├── index.html              # Standalone single-file frontend with Three.js & Jerryy's AI UI
 ├── frontend/
-│   └── index.html          # Frontend app source
+│   ├── index.html          # Frontend app source with Supabase Auth & DB sync
+│   ├── chat.html           # Dedicated chat view
+│   └── overview.html       # 3D Earth overview and architecture page
 ├── backend/
 │   ├── main.py             # FastAPI backend server with CORS & endpoints
-│   ├── color_engine.py     # Deterministic color engine & WCAG math
+│   ├── ollama_client.py    # Local Ollama client bridge
+│   ├── chat_profiles.py    # Domain-specific system prompts
 │   ├── requirements.txt    # Python dependencies
-│   ├── .env.example        # Environment configuration template
 │   └── README.md           # Backend documentation
+├── supabase/
+│   └── schema.sql          # Supabase SQL schema (conversations, messages, RLS)
 ├── .gitignore              # Git ignore rules for Python & temp files
 └── README.md               # Project overview & documentation
 ```

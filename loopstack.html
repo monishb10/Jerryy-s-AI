@@ -2578,6 +2578,104 @@
     const btnLogout = document.getElementById('btn-logout');
 
     let currentUser = null;
+    let currentConversationId = null;
+
+    // =========================================================
+    // SUPABASE DATABASE CHAT STORAGE SERVICE
+    // =========================================================
+    async function loadLatestConversationFromSupabase() {
+      if (!supabase || !currentUser) return false;
+      try {
+        const { data: convs, error: convError } = await supabase
+          .from('conversations')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .order('updated_at', { ascending: false })
+          .limit(1);
+
+        if (convError || !convs || convs.length === 0) {
+          return false;
+        }
+
+        const latestConv = convs[0];
+        currentConversationId = latestConv.id;
+
+        const { data: msgs, error: msgError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('conversation_id', currentConversationId)
+          .order('created_at', { ascending: true });
+
+        if (msgError || !msgs || msgs.length === 0) {
+          return false;
+        }
+
+        if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
+        chatHistory = [];
+        const rows = kuramaChatBody.querySelectorAll('.chat-row');
+        rows.forEach(r => r.remove());
+
+        msgs.forEach(msg => {
+          chatHistory.push({ role: msg.role, content: msg.content });
+          if (msg.role === 'user') {
+            renderUserMessage(msg.content, false);
+          } else if (msg.role === 'assistant') {
+            renderAssistantMessage(msg.content, false);
+          }
+        });
+        kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+        return true;
+      } catch (err) {
+        console.warn('Supabase chat load fallback to local:', err);
+        return false;
+      }
+    }
+
+    async function saveMessageToSupabase(role, content) {
+      if (!supabase || !currentUser) return;
+      try {
+        if (!currentConversationId) {
+          const titleSnippet = content.trim().slice(0, 42) + (content.length > 42 ? '...' : '');
+          const { data: newConv, error: convErr } = await supabase
+            .from('conversations')
+            .insert({
+              user_id: currentUser.id,
+              title: titleSnippet,
+              profile: currentProfile || 'default',
+              updated_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+          if (convErr || !newConv) {
+            console.warn('Supabase conversation insert skipped:', convErr?.message);
+            return;
+          }
+          currentConversationId = newConv.id;
+        } else {
+          supabase
+            .from('conversations')
+            .update({ updated_at: new Date().toISOString() })
+            .eq('id', currentConversationId)
+            .then();
+        }
+
+        const { error: msgErr } = await supabase
+          .from('messages')
+          .insert({
+            conversation_id: currentConversationId,
+            user_id: currentUser.id,
+            role: role,
+            content: content
+          });
+
+        if (msgErr) {
+          console.warn('Supabase message insert skipped:', msgErr?.message);
+        }
+      } catch (err) {
+        console.warn('Supabase message sync skipped:', err);
+      }
+    }
 
     function renderAuthState(user) {
       currentUser = user;
@@ -2598,6 +2696,11 @@
         }
         if (userProfileBar) userProfileBar.style.display = 'flex';
 
+        // Restore conversations from Supabase, or fall back to local storage
+        loadLatestConversationFromSupabase().then(loaded => {
+          if (!loaded) restoreChatHistory();
+        });
+
         // Show chat interface
         if (kuramaModal) {
           kuramaModal.classList.add('open');
@@ -2605,6 +2708,8 @@
         }
       } else {
         // Logged Out: Show login screen with background animation visible
+        currentConversationId = null;
+        chatHistory = [];
         if (authOverlay) authOverlay.classList.remove('auth-hidden');
         if (userProfileBar) userProfileBar.style.display = 'none';
 
@@ -2694,6 +2799,12 @@
         } else {
           renderAuthState(null);
         }
+        // Clean up OAuth hash fragments from URL after Supabase captures session
+        if (window.location.hash && (window.location.hash.includes('access_token=') || window.location.hash.includes('error='))) {
+          setTimeout(() => {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          }, 150);
+        }
       }).catch(err => {
         console.warn('Session restoration failed:', err);
         renderAuthState(null);
@@ -2723,6 +2834,7 @@
     if (btnNewChat) {
       btnNewChat.addEventListener('click', () => {
         chatHistory = [];
+        currentConversationId = null;
         try {
           localStorage.removeItem('jerryys_ai_history');
         } catch (_) {}
@@ -2909,6 +3021,7 @@
       // 3. Append user message to history & save
       chatHistory.push({ role: 'user', content: cleanPrompt });
       saveChatHistory();
+      saveMessageToSupabase('user', cleanPrompt);
 
       // 4. Show thinking indicator
       showThinking();
@@ -2932,6 +3045,7 @@
           const reply = data.reply || '';
           chatHistory.push({ role: 'assistant', content: reply });
           saveChatHistory();
+          saveMessageToSupabase('assistant', reply);
           renderAssistantMessage(reply, true);
         } else {
           let errDetail = '';
