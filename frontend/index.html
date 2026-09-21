@@ -24,6 +24,9 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
 
+  <!-- Supabase JS Client for Authentication -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     /* =========================================================
        GLOBAL RESET & TOKENS
@@ -1337,6 +1340,220 @@
       box-shadow: 0 0 12px rgba(57, 255, 20, 0.18);
     }
 
+    /* =========================================================
+       SUPABASE AUTHENTICATION OVERLAY & USER PROFILE
+       ========================================================= */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      transition: opacity 0.45s var(--ease-smooth), visibility 0.45s;
+    }
+
+    .auth-overlay.auth-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .auth-card {
+      position: relative;
+      width: 90%;
+      max-width: 440px;
+      background: rgba(14, 18, 28, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.85), 0 0 40px rgba(57, 255, 20, 0.08);
+      border-radius: 24px;
+      padding: 44px 36px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      animation: auth-card-appear 0.45s var(--ease-smooth);
+    }
+
+    @keyframes auth-card-appear {
+      from { opacity: 0; transform: translateY(16px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .auth-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(57, 255, 20, 0.1);
+      border: 1px solid rgba(57, 255, 20, 0.3);
+      color: #39FF14;
+      font-family: var(--font-general);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .auth-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #39FF14;
+      box-shadow: 0 0 8px #39FF14;
+    }
+
+    .auth-title {
+      font-family: var(--font-playfair);
+      font-size: 2.3rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+      line-height: 1.2;
+    }
+
+    .auth-subtitle {
+      font-family: var(--font-general);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 18px;
+    }
+
+    .auth-desc {
+      font-family: var(--font-outfit);
+      font-size: 0.95rem;
+      line-height: 1.55;
+      color: rgba(255, 255, 255, 0.75);
+      margin-bottom: 30px;
+    }
+
+    .btn-google-login {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      padding: 14px 24px;
+      background: #ffffff;
+      color: #111827;
+      border: none;
+      border-radius: 999px;
+      font-family: var(--font-outfit);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+      transition: transform 0.25s var(--ease-smooth), box-shadow 0.25s var(--ease-smooth), background-color 0.2s;
+    }
+
+    .btn-google-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(255, 255, 255, 0.25);
+      background: #f8fafc;
+    }
+
+    .btn-google-login:active {
+      transform: translateY(0);
+    }
+
+    .btn-google-login svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    /* User Profile Header Bar */
+    .user-profile-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 24px;
+      background: rgba(10, 12, 18, 0.75);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .user-profile-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .user-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1.5px solid rgba(57, 255, 20, 0.6);
+      box-shadow: 0 0 10px rgba(57, 255, 20, 0.25);
+      flex-shrink: 0;
+      background: #1a1d26;
+    }
+
+    .user-details {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      text-align: left;
+    }
+
+    .user-name {
+      font-family: var(--font-outfit);
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-email {
+      font-family: var(--font-outfit);
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.55);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .btn-logout {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(255, 68, 68, 0.1);
+      border: 1px solid rgba(255, 68, 68, 0.3);
+      color: #ff6b6b;
+      font-family: var(--font-outfit);
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s var(--ease-smooth);
+      flex-shrink: 0;
+    }
+
+    .btn-logout:hover {
+      background: rgba(255, 68, 68, 0.2);
+      border-color: #ff6b6b;
+      color: #ffffff;
+      transform: translateY(-1px);
+      box-shadow: 0 0 12px rgba(255, 107, 107, 0.3);
+    }
+
     .btn-new-chat {
       display: inline-flex;
       align-items: center;
@@ -1629,6 +1846,30 @@
 <body>
 
   <!-- =========================================================
+       SUPABASE AUTHENTICATION OVERLAY
+       ========================================================= -->
+  <div id="auth-overlay" class="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-badge">
+        <span class="auth-badge-dot"></span>
+        <span>LOCAL LEARNING MODEL</span>
+      </div>
+      <h1 class="auth-title">Jerryy's AI</h1>
+      <p class="auth-subtitle">LOCAL LEARNING MODEL</p>
+      <p class="auth-desc">Sign in with your Google account to access your personal syllabus intelligence and exam preparation assistant.</p>
+      <button id="btn-google-login" class="btn-google-login" type="button" aria-label="Continue with Google">
+        <svg class="google-icon" width="20" height="20" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+        <span>Continue with Google</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- =========================================================
        VIEW 1: 3D SPHERE FIELD (LANDING / HERO CANVAS)
        ========================================================= -->
   <div id="view-canvas" class="view-container hidden-view">
@@ -1812,6 +2053,25 @@
             </div>
             <button id="btn-close-kurama" class="btn-close-modal" aria-label="Close Jerryy's AI Dialog">×</button>
           </div>
+        </div>
+
+        <!-- Logged-in User Profile Bar -->
+        <div class="user-profile-bar" id="user-profile-bar" style="display: none;">
+          <div class="user-profile-info">
+            <img id="user-avatar" class="user-avatar" src="" alt="Google Profile Picture">
+            <div class="user-details">
+              <span id="user-name" class="user-name">User</span>
+              <span id="user-email" class="user-email">user@example.com</span>
+            </div>
+          </div>
+          <button id="btn-logout" class="btn-logout" type="button" aria-label="Logout">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>Logout</span>
+          </button>
         </div>
 
         <!-- Mode / Profile Selector Bar -->
@@ -2299,7 +2559,101 @@
     let currentProfile = localStorage.getItem('jerryys_ai_profile') || 'default';
     let currentThinkingRow = null;
 
+    // =========================================================
+    // SUPABASE GOOGLE AUTHENTICATION
+    // =========================================================
+    const SUPABASE_URL = "https://swpzterkadvkfuhfmpmy.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_qkxvrZxVHlxocpO6QvJL2g_uX3z_E-d";
+
+    const supabase = (window.supabase && typeof window.supabase.createClient === 'function')
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+      : null;
+
+    const authOverlay = document.getElementById('auth-overlay');
+    const btnGoogleLogin = document.getElementById('btn-google-login');
+    const userProfileBar = document.getElementById('user-profile-bar');
+    const userAvatar = document.getElementById('user-avatar');
+    const userName = document.getElementById('user-name');
+    const userEmail = document.getElementById('user-email');
+    const btnLogout = document.getElementById('btn-logout');
+
+    let currentUser = null;
+
+    function renderAuthState(user) {
+      currentUser = user;
+      if (user) {
+        // Logged In: Hide login screen and display Jerryy's AI chat interface
+        if (authOverlay) authOverlay.classList.add('auth-hidden');
+
+        const meta = user.user_metadata || {};
+        const displayName = meta.full_name || meta.name || user.email?.split('@')[0] || 'Jerryy Student';
+        const emailAddr = user.email || '';
+        const photoUrl = meta.avatar_url || meta.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=2F69FF&color=fff`;
+
+        if (userName) userName.textContent = displayName;
+        if (userEmail) userEmail.textContent = emailAddr;
+        if (userAvatar) {
+          userAvatar.src = photoUrl;
+          userAvatar.alt = displayName;
+        }
+        if (userProfileBar) userProfileBar.style.display = 'flex';
+
+        // Show chat interface
+        if (kuramaModal) {
+          kuramaModal.classList.add('open');
+          if (kuramaInput) setTimeout(() => kuramaInput.focus(), 100);
+        }
+      } else {
+        // Logged Out: Show login screen with background animation visible
+        if (authOverlay) authOverlay.classList.remove('auth-hidden');
+        if (userProfileBar) userProfileBar.style.display = 'none';
+
+        // Close chat modal
+        if (kuramaModal) {
+          kuramaModal.classList.remove('open');
+        }
+      }
+    }
+
+    if (btnGoogleLogin && supabase) {
+      btnGoogleLogin.addEventListener('click', async () => {
+        try {
+          const { error } = await supabase.auth.signInWithOAuth({
+            provider: "google",
+            options: {
+              redirectTo: window.location.origin
+            }
+          });
+          if (error) {
+            console.error('Google OAuth error:', error);
+            showToast('Login error: ' + error.message);
+          }
+        } catch (err) {
+          console.error('Google sign-in error:', err);
+          showToast('Could not open Google login.');
+        }
+      });
+    }
+
+    if (btnLogout && supabase) {
+      btnLogout.addEventListener('click', async () => {
+        try {
+          const { error } = await supabase.auth.signOut();
+          if (error) console.error('Sign-out error:', error);
+          renderAuthState(null);
+          showToast('Logged out');
+        } catch (err) {
+          console.error('Logout error:', err);
+          renderAuthState(null);
+        }
+      });
+    }
+
     function openKuramaModal() {
+      if (!currentUser) {
+        if (authOverlay) authOverlay.classList.remove('auth-hidden');
+        return;
+      }
       kuramaModal.classList.add('open');
       setTimeout(() => kuramaInput.focus(), 100);
     }
@@ -2308,18 +2662,42 @@
       kuramaModal.classList.remove('open');
     }
 
-    btnOpenKurama1.addEventListener('click', openKuramaModal);
-    btnOpenKurama2.addEventListener('click', openKuramaModal);
-    btnCloseKurama.addEventListener('click', closeKuramaModal);
+    if (btnOpenKurama1) btnOpenKurama1.addEventListener('click', openKuramaModal);
+    if (btnOpenKurama2) btnOpenKurama2.addEventListener('click', openKuramaModal);
+    if (btnCloseKurama) btnCloseKurama.addEventListener('click', closeKuramaModal);
 
-    kuramaModal.addEventListener('click', (e) => {
-      if (e.target === kuramaModal) closeKuramaModal();
-    });
+    if (kuramaModal) {
+      kuramaModal.addEventListener('click', (e) => {
+        if (e.target === kuramaModal) closeKuramaModal();
+      });
+    }
 
     // Auto-open chat if ?chat=open or ?chat=true is in URL
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('chat') === 'open' || urlParams.get('chat') === 'true') {
       setTimeout(openKuramaModal, 300);
+    }
+
+    // Initialize Supabase Auth listeners and session restoration
+    if (supabase) {
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (session && session.user) {
+          renderAuthState(session.user);
+        } else {
+          renderAuthState(null);
+        }
+      });
+
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session && session.user) {
+          renderAuthState(session.user);
+        } else {
+          renderAuthState(null);
+        }
+      }).catch(err => {
+        console.warn('Session restoration failed:', err);
+        renderAuthState(null);
+      });
     }
 
     // Profile selector handling
