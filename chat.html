@@ -20,6 +20,10 @@
   }
   </script>
 
+  <!-- Marked & DOMPurify for Safe Markdown Rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+
   <style>
     /* =========================================================
        GLOBAL RESET & TOKENS
@@ -1018,6 +1022,9 @@
 
     .chat-bubble-bot {
       max-width: 92%;
+      min-width: 0;
+      word-break: break-word;
+      overflow-wrap: break-word;
       background: rgba(20, 22, 30, 0.7);
       border: 1px solid rgba(255, 255, 255, 0.12);
       padding: 20px;
@@ -1033,6 +1040,242 @@
       font-size: 0.95rem;
       line-height: 1.6;
       color: rgba(255, 255, 255, 0.88);
+      min-width: 0;
+      width: 100%;
+    }
+
+    /* Markdown Formatted Content in Assistant Messages */
+    .bot-reply-text > *:first-child {
+      margin-top: 0 !important;
+    }
+
+    .bot-reply-text > *:last-child {
+      margin-bottom: 0 !important;
+    }
+
+    /* Compact Headings */
+    .bot-reply-text h1,
+    .bot-reply-text h2,
+    .bot-reply-text h3,
+    .bot-reply-text h4 {
+      font-family: var(--font-outfit);
+      font-weight: 600;
+      line-height: 1.35;
+      letter-spacing: -0.01em;
+      margin: 16px 0 8px 0;
+      color: #ffffff;
+    }
+
+    .bot-reply-text h1 {
+      font-size: 1.15rem;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .bot-reply-text h2 {
+      font-size: 1.05rem;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      color: #f8fafc;
+    }
+
+    .bot-reply-text h3 {
+      font-size: 0.98rem;
+      color: #e2e8f0;
+    }
+
+    .bot-reply-text h4 {
+      font-size: 0.92rem;
+      color: #cbd5e1;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Paragraphs */
+    .bot-reply-text p {
+      margin: 0 0 10px 0;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.88);
+    }
+
+    /* Lists */
+    .bot-reply-text ul,
+    .bot-reply-text ol {
+      margin: 6px 0 10px 0;
+      padding-left: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .bot-reply-text ul {
+      list-style-type: disc;
+    }
+
+    .bot-reply-text ol {
+      list-style-type: decimal;
+    }
+
+    .bot-reply-text li {
+      line-height: 1.55;
+      color: rgba(255, 255, 255, 0.88);
+    }
+
+    .bot-reply-text li::marker {
+      color: #39FF14;
+    }
+
+    .bot-reply-text ul ul,
+    .bot-reply-text ol ol,
+    .bot-reply-text ul ol,
+    .bot-reply-text ol ul {
+      margin: 4px 0 4px 0;
+      padding-left: 18px;
+    }
+
+    /* Strong & Em */
+    .bot-reply-text strong {
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .bot-reply-text em {
+      font-style: italic;
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Blockquotes */
+    .bot-reply-text blockquote {
+      margin: 12px 0;
+      padding: 10px 16px;
+      background: rgba(57, 255, 20, 0.05);
+      border-left: 3px solid #39FF14;
+      border-radius: 0 8px 8px 0;
+      color: rgba(255, 255, 255, 0.82);
+      font-style: italic;
+    }
+
+    .bot-reply-text blockquote p {
+      margin: 0;
+    }
+
+    /* Inline Code */
+    .bot-reply-text :not(pre) > code {
+      font-family: var(--font-mono), monospace;
+      font-size: 0.85em;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #5df0a8;
+      padding: 2px 6px;
+      border-radius: 5px;
+      word-break: break-word;
+    }
+
+    /* Code Blocks */
+    .bot-reply-text pre {
+      font-family: var(--font-mono), monospace;
+      background: rgba(8, 10, 15, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin: 12px 0;
+      overflow-x: auto;
+      max-width: 100%;
+      box-sizing: border-box;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+
+    .bot-reply-text pre code {
+      font-family: var(--font-mono), monospace;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #e2e8f0;
+      background: transparent;
+      padding: 0;
+      border: none;
+      border-radius: 0;
+      display: block;
+      white-space: pre;
+      tab-size: 2;
+    }
+
+    /* Responsive Tables (Dark Glassmorphic) */
+    .bot-reply-text .table-wrapper {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 12px 0;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(14, 16, 24, 0.65);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    }
+
+    .bot-reply-text table {
+      width: 100%;
+      max-width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 0;
+    }
+
+    .bot-reply-text thead {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .bot-reply-text th,
+    .bot-reply-text td {
+      padding: 9px 14px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .bot-reply-text th:last-child,
+    .bot-reply-text td:last-child {
+      border-right: none;
+    }
+
+    .bot-reply-text th {
+      color: #ffffff;
+      font-weight: 600;
+      font-family: var(--font-outfit);
+      letter-spacing: 0.02em;
+    }
+
+    .bot-reply-text td {
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    .bot-reply-text tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .bot-reply-text tbody tr:hover td {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    /* Links & Horizontal Dividers */
+    .bot-reply-text a {
+      color: #39FF14;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      transition: opacity 0.2s ease;
+    }
+
+    .bot-reply-text a:hover {
+      opacity: 0.8;
+    }
+
+    .bot-reply-text hr {
+      border: none;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      margin: 14px 0;
     }
 
     /* Mode / Profile Selector Bar */
@@ -2167,33 +2410,38 @@
       }
     }
 
-    // Safe model response formatting with textContent and clean code fences
-    function formatSafeMarkdown(container, text) {
-      if (!text.includes('```')) {
-        container.textContent = text;
-        return;
-      }
-      const parts = text.split(/(```[\s\S]*?```)/g);
-      parts.forEach(part => {
-        if (part.startsWith('```') && part.endsWith('```')) {
-          const firstLineEnd = part.indexOf('\n');
-          let codeContent = '';
-          if (firstLineEnd !== -1) {
-            codeContent = part.slice(firstLineEnd + 1, -3);
-          } else {
-            codeContent = part.slice(3, -3);
-          }
-          const pre = document.createElement('pre');
-          const code = document.createElement('code');
-          code.textContent = codeContent.trim();
-          pre.appendChild(code);
-          container.appendChild(pre);
-        } else if (part) {
-          const span = document.createElement('span');
-          span.textContent = part;
-          container.appendChild(span);
+    // Configure DOMPurify hook to open external links safely in new tab
+    if (typeof DOMPurify !== 'undefined') {
+      DOMPurify.addHook('afterSanitizeAttributes', function (node) {
+        if ('target' in node) {
+          node.setAttribute('target', '_blank');
+          node.setAttribute('rel', 'noopener noreferrer');
         }
       });
+    }
+
+    // Markdown rendering with marked + DOMPurify sanitization
+    function renderMarkdown(markdown) {
+      if (!markdown) return '';
+      if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+        if (typeof marked.setOptions === 'function') {
+          marked.setOptions({
+            gfm: true,
+            breaks: true
+          });
+        }
+        let rawHtml = marked.parse(markdown);
+        // Wrap tables in responsive container for smooth horizontal scrolling
+        rawHtml = rawHtml.replace(/<table(\s*[^>]*)>([\s\S]*?)<\/table>/gi, '<div class="table-wrapper"><table$1>$2</table></div>');
+        return DOMPurify.sanitize(rawHtml, {
+          ADD_ATTR: ['target', 'rel']
+        });
+      }
+      // Safe fallback if CDN scripts fail to load
+      const esc = (str) => str.replace(/[&<>"']/g, (m) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[m]));
+      return `<p>${esc(markdown).replace(/\n/g, '<br>')}</p>`;
     }
 
     function renderUserMessage(text, scroll = true) {
@@ -2219,7 +2467,7 @@
 
       const replyBody = document.createElement('div');
       replyBody.className = 'bot-reply-text';
-      formatSafeMarkdown(replyBody, text);
+      replyBody.innerHTML = renderMarkdown(text);
 
       bubble.appendChild(header);
       bubble.appendChild(replyBody);
