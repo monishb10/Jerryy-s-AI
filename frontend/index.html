@@ -2528,38 +2528,25 @@
       return { firstName, fullName, email, avatarUrl };
     }
 
-    function renderAuthState(user) {
+    function showLoginScreen() {
+      currentUser = null;
+      if (stateChecking) stateChecking.style.display = 'none';
+      if (stateLoggedIn) stateLoggedIn.style.display = 'none';
+      if (stateLoggedOut) stateLoggedOut.style.display = 'flex';
+      if (heroUserFirstname) heroUserFirstname.textContent = '';
+      if (heroUserAvatar) heroUserAvatar.src = '';
+    }
+
+    function showAuthenticatedWelcome(user) {
       currentUser = user;
-
-      if (user === undefined) {
-        // STATE 1: CHECKING SESSION
-        if (stateChecking) stateChecking.style.display = 'flex';
-        if (stateLoggedOut) stateLoggedOut.style.display = 'none';
-        if (stateLoggedIn) stateLoggedIn.style.display = 'none';
-        return;
-      }
-
-      if (user) {
-        // STATE 3: USER LOGGED IN
-        const userData = extractUserData(user);
-
-        if (stateChecking) stateChecking.style.display = 'none';
-        if (stateLoggedOut) stateLoggedOut.style.display = 'none';
-        if (stateLoggedIn) stateLoggedIn.style.display = 'flex';
-
-        if (heroUserFirstname) heroUserFirstname.textContent = userData.firstName;
-        if (heroUserAvatar) {
-          heroUserAvatar.src = userData.avatarUrl;
-          heroUserAvatar.alt = userData.fullName;
-        }
-      } else {
-        // STATE 2: USER NOT LOGGED IN
-        if (stateChecking) stateChecking.style.display = 'none';
-        if (stateLoggedOut) stateLoggedOut.style.display = 'flex';
-        if (stateLoggedIn) stateLoggedIn.style.display = 'none';
-
-        if (heroUserFirstname) heroUserFirstname.textContent = '';
-        if (heroUserAvatar) heroUserAvatar.src = '';
+      const userData = extractUserData(user);
+      if (stateChecking) stateChecking.style.display = 'none';
+      if (stateLoggedOut) stateLoggedOut.style.display = 'none';
+      if (stateLoggedIn) stateLoggedIn.style.display = 'flex';
+      if (heroUserFirstname) heroUserFirstname.textContent = userData.firstName;
+      if (heroUserAvatar) {
+        heroUserAvatar.src = userData.avatarUrl;
+        heroUserAvatar.alt = userData.fullName;
       }
     }
 
@@ -2599,7 +2586,7 @@
         try {
           localStorage.removeItem('jerryys_ai_history');
         } catch (_) {}
-        renderAuthState(null);
+        showLoginScreen();
         showToast('Signed out');
       }
     }
@@ -2611,7 +2598,7 @@
       btnGetStarted.addEventListener('click', (e) => {
         e.preventDefault();
         if (!currentUser) {
-          renderAuthState(null);
+          showLoginScreen();
           return;
         }
         window.location.href = '/chat';
@@ -2623,38 +2610,93 @@
     if (btnOpenKurama1) btnOpenKurama1.addEventListener('click', () => { window.location.href = '/chat'; });
     if (btnOpenKurama2) btnOpenKurama2.addEventListener('click', () => { window.location.href = '/chat'; });
 
-    // Initialize Supabase Auth listeners and session restoration
-    if (supabase) {
-      // STATE 1: Start checking session
-      renderAuthState(undefined);
+    // =========================================================
+    // AUTHENTICATION INITIALIZATION & 8-SECOND FAILSAFE TIMEOUT
+    // =========================================================
+    let authSettled = false;
 
-      supabase.auth.onAuthStateChange((event, session) => {
-        if (session && session.user) {
-          renderAuthState(session.user);
-        } else {
-          renderAuthState(null);
-        }
-      });
+    // Failsafe: if Supabase auth does not respond within 8 seconds, fallback to login
+    const authTimeout = setTimeout(() => {
+      if (!authSettled) {
+        console.warn("Supabase auth initialization timed out after 8s; falling back to login screen.");
+        authSettled = true;
+        showLoginScreen();
+      }
+    }, 8000);
 
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session && session.user) {
-          renderAuthState(session.user);
-        } else {
-          renderAuthState(null);
+    async function initializeAuth() {
+      if (!supabase) {
+        console.error("Supabase client not initialized.");
+        if (!authSettled) {
+          authSettled = true;
+          clearTimeout(authTimeout);
+          showLoginScreen();
         }
+        return;
+      }
+
+      try {
+        const {
+          data: { session } = {},
+          error
+        } = await supabase.auth.getSession();
+
+        if (authSettled) return;
+
+        if (error) {
+          console.error("Supabase auth error:", error);
+          authSettled = true;
+          clearTimeout(authTimeout);
+          showLoginScreen();
+          return;
+        }
+
+        authSettled = true;
+        clearTimeout(authTimeout);
+
+        if (session && session.user) {
+          showAuthenticatedWelcome(session.user);
+        } else {
+          showLoginScreen();
+        }
+
         // Clean up OAuth hash fragments from URL after Supabase captures session
         if (window.location.hash && (window.location.hash.includes('access_token=') || window.location.hash.includes('error='))) {
           setTimeout(() => {
             window.history.replaceState(null, '', window.location.pathname + window.location.search);
           }, 150);
         }
-      }).catch(err => {
-        console.warn('Session check failed:', err);
-        renderAuthState(null);
-      });
-    } else {
-      renderAuthState(null);
+      } catch (err) {
+        console.error("Auth initialization failed:", err);
+        if (!authSettled) {
+          authSettled = true;
+          clearTimeout(authTimeout);
+          showLoginScreen();
+        }
+      }
     }
+
+    // Keep onAuthStateChange listener without infinite loop
+    if (supabase) {
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' || (session && session.user)) {
+          authSettled = true;
+          clearTimeout(authTimeout);
+          showAuthenticatedWelcome(session.user);
+        } else if (event === 'SIGNED_OUT' || (!session || !session.user)) {
+          authSettled = true;
+          clearTimeout(authTimeout);
+          currentUser = null;
+          try {
+            localStorage.removeItem('jerryys_ai_history');
+          } catch (_) {}
+          showLoginScreen();
+        }
+      });
+    }
+
+    // Trigger auth initialization immediately on page load
+    initializeAuth();
 
     // Health check on load
     async function checkOllamaHealth() {

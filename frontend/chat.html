@@ -2791,6 +2791,15 @@
     // =========================================================
     // CHAT PAGE AUTH GUARD & SESSION RESTORATION
     // =========================================================
+    let chatAuthSettled = false;
+    const chatAuthTimeout = setTimeout(() => {
+      if (!chatAuthSettled) {
+        console.warn("Chat auth guard timed out after 8s; redirecting to /.");
+        chatAuthSettled = true;
+        window.location.replace('/');
+      }
+    }, 8000);
+
     async function initChatAuthGuard() {
       if (!supabase) {
         window.location.replace('/');
@@ -2798,11 +2807,18 @@
       }
 
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session } = {}, error } = await supabase.auth.getSession();
+        if (chatAuthSettled) return;
+
         if (error || !session || !session.user) {
+          chatAuthSettled = true;
+          clearTimeout(chatAuthTimeout);
           window.location.replace('/');
           return;
         }
+
+        chatAuthSettled = true;
+        clearTimeout(chatAuthTimeout);
 
         await loadUserChats(session.user);
 
@@ -2814,7 +2830,11 @@
         }
       } catch (err) {
         console.warn('Auth guard check failed:', err);
-        window.location.replace('/');
+        if (!chatAuthSettled) {
+          chatAuthSettled = true;
+          clearTimeout(chatAuthTimeout);
+          window.location.replace('/');
+        }
       }
     }
 
