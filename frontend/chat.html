@@ -823,8 +823,8 @@
     }
 
     .kurama-modal-card {
-      width: min(840px, calc(100vw - 40px));
-      height: min(82vh, 800px);
+      width: min(1060px, calc(100vw - 32px));
+      height: min(86vh, 840px);
       border-radius: 28px;
       background: rgba(12, 13, 18, 0.88);
       border: 1px solid rgba(255, 255, 255, 0.16);
@@ -834,8 +834,8 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.18);
       backdrop-filter: blur(32px) saturate(180%);
       -webkit-backdrop-filter: blur(32px) saturate(180%);
-      display: grid;
-      grid-template-rows: auto 1fr auto;
+      display: flex;
+      flex-direction: column;
       overflow: hidden;
       transform: translateY(24px) scale(0.96);
       transition: transform 0.45s var(--ease-smooth);
@@ -843,6 +843,227 @@
 
     .kurama-modal-overlay.open .kurama-modal-card {
       transform: translateY(0) scale(1);
+    }
+
+    /* Layout Split: Sidebar + Chat Main Area */
+    .chat-layout-container {
+      display: flex;
+      flex-direction: row;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .chat-sidebar {
+      width: 250px;
+      flex-shrink: 0;
+      background: rgba(9, 11, 15, 0.75);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.3s var(--ease-smooth);
+    }
+
+    .chat-sidebar-header {
+      padding: 14px 14px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .btn-sidebar-new-chat {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(47, 105, 255, 0.16);
+      border: 1px solid rgba(47, 105, 255, 0.4);
+      color: #ffffff;
+      font-family: var(--font-general);
+      font-size: 12.5px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all 0.25s var(--ease-smooth);
+    }
+
+    .btn-sidebar-new-chat:hover {
+      background: rgba(47, 105, 255, 0.3);
+      border-color: rgba(47, 105, 255, 0.7);
+      box-shadow: 0 0 16px rgba(47, 105, 255, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .chat-sidebar-section-title {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: rgba(255, 255, 255, 0.4);
+      text-transform: uppercase;
+      padding: 0 2px;
+    }
+
+    .chat-history-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .chat-history-list::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .chat-history-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+    }
+
+    .chat-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 12.5px;
+      font-family: var(--font-outfit);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: left;
+      user-select: none;
+    }
+
+    .chat-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .chat-item.active {
+      background: rgba(47, 105, 255, 0.18);
+      border-color: rgba(47, 105, 255, 0.45);
+      color: #ffffff;
+      font-weight: 500;
+    }
+
+    .chat-item-main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .chat-item-icon {
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .chat-item.active .chat-item-icon {
+      color: #39FF14;
+    }
+
+    .chat-item-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+
+    .btn-delete-chat {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .chat-item:hover .btn-delete-chat,
+    .chat-item.active .btn-delete-chat {
+      opacity: 1;
+    }
+
+    .btn-delete-chat:hover {
+      color: #ff6b6b;
+      background: rgba(255, 107, 107, 0.15);
+    }
+
+    .chat-history-empty {
+      padding: 24px 10px;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.35);
+      font-size: 12px;
+      font-family: var(--font-outfit);
+    }
+
+    .chat-main-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .btn-sidebar-toggle {
+      display: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #ffffff;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      padding: 0;
+    }
+
+    .btn-sidebar-toggle:hover {
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    @media (max-width: 768px) {
+      .btn-sidebar-toggle {
+        display: flex;
+      }
+      .chat-sidebar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 25;
+        width: 260px;
+        background: rgba(10, 12, 18, 0.97);
+        box-shadow: 10px 0 35px rgba(0, 0, 0, 0.85);
+        transform: translateX(-100%);
+      }
+      .chat-sidebar.open {
+        transform: translateX(0);
+      }
     }
 
     .kurama-modal-header {
@@ -1968,6 +2189,13 @@
       <!-- Header -->
       <div class="kurama-modal-header">
         <div class="kurama-modal-title">
+          <button id="btn-sidebar-toggle" class="btn-sidebar-toggle" type="button" aria-label="Toggle chat history" title="Toggle chat history">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
           <div class="kurama-mini-orb"></div>
           <div>
             <div class="kurama-title-text">Jerryy's AI</div>
@@ -2016,47 +2244,70 @@
         </button>
       </div>
 
-      <!-- Mode / Profile Selector Bar -->
-      <div class="profile-selector-container">
-        <span class="profile-selector-label">Mode:</span>
-        <div class="profile-selector" id="profile-selector">
-          <button type="button" class="profile-pill active" data-profile="default">General</button>
-          <button type="button" class="profile-pill" data-profile="exam">Exam Prep</button>
-          <button type="button" class="profile-pill" data-profile="dbms">DBMS</button>
-          <button type="button" class="profile-pill" data-profile="programming">Programming</button>
-          <button type="button" class="profile-pill" data-profile="study_support">Study Support</button>
-        </div>
-      </div>
-
-      <!-- Chat Body -->
-      <div class="kurama-modal-body" id="kurama-chat-body">
-        <div class="kurama-empty-state" id="kurama-empty-state">
-          <div class="kurama-empty-tag">LOCAL LEARNING MODEL</div>
-          <h2 class="kurama-empty-title">What do you want to learn?</h2>
-          <p class="kurama-empty-sub">Ask a question, prepare for an exam, practise coding, revise a topic, or test your understanding.</p>
-
-          <div class="kurama-chips-grid">
-            <button type="button" class="kurama-chip" data-prompt="Teach me this topic step by step using a realistic example.">Learn</button>
-            <button type="button" class="kurama-chip" data-prompt="Help me prepare this topic for my exam.">Exam Prep</button>
-            <button type="button" class="kurama-chip" data-prompt="Quiz me one question at a time.">Quiz Me</button>
-            <button type="button" class="kurama-chip" data-prompt="Give me a quick revision of this topic.">Revision</button>
-            <button type="button" class="kurama-chip" data-prompt="Help me solve and understand this programming problem.">Programming</button>
-            <button type="button" class="kurama-chip" data-prompt="Explain this in very simple English with one realistic example.">Explain Simply</button>
+      <!-- Chat Layout Container: Sidebar + Main Content -->
+      <div class="chat-layout-container">
+        <!-- Sidebar: Chat History -->
+        <aside class="chat-sidebar" id="chat-sidebar">
+          <div class="chat-sidebar-header">
+            <button type="button" class="btn-sidebar-new-chat" id="btn-sidebar-new-chat">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>+ New Chat</span>
+            </button>
+            <div class="chat-sidebar-section-title">Recent Chats</div>
           </div>
-        </div>
-      </div>
+          <div class="chat-history-list" id="chat-history-list">
+            <div class="chat-history-empty" id="chat-history-empty">No conversations yet</div>
+          </div>
+        </aside>
 
-      <!-- Chat Input Footer -->
-      <div class="kurama-modal-footer">
-        <form class="kurama-input-form" id="kurama-chat-form">
-          <textarea id="kurama-input" class="kurama-text-input" rows="1" placeholder="Ask Jerryy's AI anything..."></textarea>
-          <button type="submit" class="btn-send-prompt" aria-label="Send prompt">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-              <polyline points="12 5 19 12 12 19"></polyline>
-            </svg>
-          </button>
-        </form>
+        <!-- Main Chat Area -->
+        <main class="chat-main-area">
+          <!-- Mode / Profile Selector Bar -->
+          <div class="profile-selector-container">
+            <span class="profile-selector-label">Mode:</span>
+            <div class="profile-selector" id="profile-selector">
+              <button type="button" class="profile-pill active" data-profile="default">General</button>
+              <button type="button" class="profile-pill" data-profile="exam">Exam Prep</button>
+              <button type="button" class="profile-pill" data-profile="dbms">DBMS</button>
+              <button type="button" class="profile-pill" data-profile="programming">Programming</button>
+              <button type="button" class="profile-pill" data-profile="study_support">Study Support</button>
+            </div>
+          </div>
+
+          <!-- Chat Body -->
+          <div class="kurama-modal-body" id="kurama-chat-body">
+            <div class="kurama-empty-state" id="kurama-empty-state">
+              <div class="kurama-empty-tag">LOCAL LEARNING MODEL</div>
+              <h2 class="kurama-empty-title">What do you want to learn?</h2>
+              <p class="kurama-empty-sub">Ask a question, prepare for an exam, practise coding, revise a topic, or test your understanding.</p>
+
+              <div class="kurama-chips-grid">
+                <button type="button" class="kurama-chip" data-prompt="Teach me this topic step by step using a realistic example.">Learn</button>
+                <button type="button" class="kurama-chip" data-prompt="Help me prepare this topic for my exam.">Exam Prep</button>
+                <button type="button" class="kurama-chip" data-prompt="Quiz me one question at a time.">Quiz Me</button>
+                <button type="button" class="kurama-chip" data-prompt="Give me a quick revision of this topic.">Revision</button>
+                <button type="button" class="kurama-chip" data-prompt="Help me solve and understand this programming problem.">Programming</button>
+                <button type="button" class="kurama-chip" data-prompt="Explain this in very simple English with one realistic example.">Explain Simply</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chat Input Footer -->
+          <div class="kurama-modal-footer">
+            <form class="kurama-input-form" id="kurama-chat-form">
+              <textarea id="kurama-input" class="kurama-text-input" rows="1" placeholder="Ask Jerryy's AI anything..."></textarea>
+              <button type="submit" class="btn-send-prompt" id="btn-send-prompt" aria-label="Send prompt">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </button>
+            </form>
+          </div>
+        </main>
       </div>
     </div>
   </div>
@@ -2505,12 +2756,24 @@
     const kuramaModal = document.getElementById('kurama-modal');
     const btnCloseKurama = document.getElementById('btn-close-kurama');
     const btnNewChat = document.getElementById('btn-new-chat');
+    const btnSidebarNewChat = document.getElementById('btn-sidebar-new-chat');
+    const btnSidebarToggle = document.getElementById('btn-sidebar-toggle');
+    const chatSidebar = document.getElementById('chat-sidebar');
+    const chatHistoryList = document.getElementById('chat-history-list');
     const kuramaChatBody = document.getElementById('kurama-chat-body');
     const kuramaEmptyState = document.getElementById('kurama-empty-state');
     const kuramaForm = document.getElementById('kurama-chat-form');
     const kuramaInput = document.getElementById('kurama-input');
+    const btnSendPrompt = document.getElementById('btn-send-prompt');
 
+    // State Variables
+    let currentUser = null;
+    let currentAuthUserId = null;
+    let currentChatId = null;
     let chatHistory = [];
+    let userChats = [];
+    let isProcessingMessage = false;
+    let isLoadingChat = false;
     let currentProfile = localStorage.getItem('jerryys_ai_profile') || 'default';
     let currentThinkingRow = null;
 
@@ -2520,12 +2783,12 @@
     } catch (_) {}
 
     // =========================================================
-    // SUPABASE GOOGLE AUTHENTICATION & SESSION GUARD
+    // SUPABASE GOOGLE AUTHENTICATION CLIENT
     // =========================================================
     const SUPABASE_URL = "https://swpzterkadvkfuhfmpmy.supabase.co";
     const SUPABASE_KEY = "sb_publishable_qkxvrZxVHlxocpO6QvJL2g_uX3z_E-d";
 
-    const supabaseClient = (window.supabase && typeof window.supabase.createClient === 'function')
+    const supabaseClient = (typeof window !== 'undefined' && window.supabase && typeof window.supabase.createClient === 'function')
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
       : null;
 
@@ -2535,11 +2798,64 @@
     const userEmail = document.getElementById('user-email');
     const btnLogout = document.getElementById('btn-logout');
 
-    let currentUser = null;
-    let currentChatId = null;
+    // =========================================================
+    // ISOLATED PER-USER STORAGE FALLBACK HELPERS
+    // (Used safely if remote Supabase schema is not yet applied)
+    // =========================================================
+    function getUserChatsStorageKey(userId) {
+      return `jerryys_ai_chats_${userId}`;
+    }
 
-    function getUserStorageKey(userId) {
-      return `jerryys_ai_history_${userId}`;
+    function getChatMessagesStorageKey(chatId) {
+      return `jerryys_ai_msgs_${chatId}`;
+    }
+
+    function getLocalUserChats(userId) {
+      try {
+        const raw = localStorage.getItem(getUserChatsStorageKey(userId));
+        return raw ? JSON.parse(raw) : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function saveLocalUserChat(userId, chat) {
+      try {
+        let list = getLocalUserChats(userId);
+        const idx = list.findIndex(c => c.id === chat.id);
+        if (idx >= 0) {
+          list[idx] = { ...list[idx], ...chat };
+        } else {
+          list.unshift(chat);
+        }
+        localStorage.setItem(getUserChatsStorageKey(userId), JSON.stringify(list));
+      } catch (_) {}
+    }
+
+    function deleteLocalUserChat(userId, chatId) {
+      try {
+        let list = getLocalUserChats(userId);
+        list = list.filter(c => c.id !== chatId);
+        localStorage.setItem(getUserChatsStorageKey(userId), JSON.stringify(list));
+        localStorage.removeItem(getChatMessagesStorageKey(chatId));
+      } catch (_) {}
+    }
+
+    function getLocalChatMessages(userId, chatId) {
+      try {
+        const raw = localStorage.getItem(getChatMessagesStorageKey(chatId));
+        return raw ? JSON.parse(raw) : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function saveLocalChatMessage(userId, chatId, role, content) {
+      try {
+        let msgs = getLocalChatMessages(userId, chatId);
+        msgs.push({ role, content, created_at: new Date().toISOString() });
+        localStorage.setItem(getChatMessagesStorageKey(chatId), JSON.stringify(msgs));
+      } catch (_) {}
     }
 
     function extractUserData(user) {
@@ -2568,18 +2884,6 @@
       return { firstName, fullName, email, avatarUrl };
     }
 
-    // AUTH CHANGE RESET: Reset all in-memory chat state & DOM before loading
-    function resetChatState() {
-      chatHistory = [];
-      currentChatId = null;
-      if (kuramaChatBody) {
-        const rows = kuramaChatBody.querySelectorAll('.chat-row');
-        rows.forEach(r => r.remove());
-      }
-      if (kuramaEmptyState) kuramaEmptyState.style.display = 'block';
-      if (kuramaInput) kuramaInput.value = '';
-    }
-
     // Render User Profile information in top bar of the chat card
     function renderUserProfile(user) {
       if (!user) {
@@ -2600,152 +2904,420 @@
     }
 
     // =========================================================
-    // PER-USER ISOLATED CHAT STORAGE (SUPABASE AS PRIMARY TRUTH)
+    // MESSAGE RENDERING & CONTAINER CLEANUP (STRICT DEDUPLICATION)
     // =========================================================
-    async function loadUserChats(user) {
-      if (!user || !user.id) {
-        resetChatState();
+    function clearMessageContainer() {
+      if (!kuramaChatBody) return;
+      const rows = kuramaChatBody.querySelectorAll('.chat-row');
+      rows.forEach(r => r.remove());
+      if (kuramaEmptyState) kuramaEmptyState.style.display = 'block';
+    }
+
+    function renderMessages(messages) {
+      clearMessageContainer();
+      if (!messages || messages.length === 0) {
+        if (kuramaEmptyState) kuramaEmptyState.style.display = 'block';
+        return;
+      }
+      if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
+
+      messages.forEach(msg => {
+        if (msg.role === 'user') {
+          renderUserMessage(msg.content, false);
+        } else if (msg.role === 'assistant') {
+          renderAssistantMessage(msg.content, false);
+        }
+      });
+      kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+    }
+
+    // =========================================================
+    // LOAD CHAT: FETCH ONCE, POPULATE chatHistory, RENDER ONCE
+    // =========================================================
+    async function loadChat(chatId) {
+      if (!chatId || isLoadingChat) return;
+      isLoadingChat = true;
+
+      try {
+        currentChatId = chatId;
+
+        // 1. Clear visible message container FIRST
+        clearMessageContainer();
+
+        // 2. Reset in-memory chat history
+        chatHistory = [];
+
+        // 3. Highlight selected chat in sidebar
+        highlightActiveChat(chatId);
+
+        let messages = [];
+
+        // 4. Fetch that chat's messages ONCE from Supabase
+        if (supabaseClient && currentUser) {
+          try {
+            const { data, error } = await supabaseClient
+              .from('messages')
+              .select('*')
+              .eq('chat_id', chatId)
+              .order('created_at', { ascending: true });
+
+            if (!error && Array.isArray(data) && data.length > 0) {
+              messages = data;
+            }
+          } catch (err) {
+            console.warn('[CHAT] Supabase messages query failed:', err);
+          }
+        }
+
+        // Fallback to isolated user storage if remote returned no rows
+        if (messages.length === 0 && currentUser) {
+          messages = getLocalChatMessages(currentUser.id, chatId);
+        }
+
+        // 5. Populate chatHistory strictly from returned rows
+        chatHistory = messages.map(m => ({
+          role: m.role,
+          content: m.content
+        }));
+
+        // 6. Render each message exactly ONCE
+        renderMessages(chatHistory);
+
+        // Remember active chat for user
+        if (currentUser) {
+          try {
+            localStorage.setItem(`jerryys_ai_last_chat_${currentUser.id}`, chatId);
+          } catch (_) {}
+        }
+      } finally {
+        isLoadingChat = false;
+      }
+    }
+
+    // =========================================================
+    // SIDEBAR: RENDER & HIGHLIGHT
+    // =========================================================
+    function highlightActiveChat(chatId) {
+      const items = document.querySelectorAll('.chat-item');
+      items.forEach(el => {
+        if (el.dataset.chatId === chatId) {
+          el.classList.add('active');
+        } else {
+          el.classList.remove('active');
+        }
+      });
+    }
+
+    function renderChatHistoryList(chats) {
+      if (!chatHistoryList) return;
+      chatHistoryList.innerHTML = '';
+
+      if (!chats || chats.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'chat-history-empty';
+        empty.id = 'chat-history-empty';
+        empty.textContent = 'No conversations yet';
+        chatHistoryList.appendChild(empty);
         return;
       }
 
-      // Step 1: Immediately clear previous chat state and DOM
-      resetChatState();
-      currentUser = user;
-      renderUserProfile(user);
+      chats.forEach(chat => {
+        const item = document.createElement('div');
+        item.className = 'chat-item' + (chat.id === currentChatId ? ' active' : '');
+        item.dataset.chatId = chat.id;
 
-      let loadedFromSupabase = false;
+        const mainDiv = document.createElement('div');
+        mainDiv.className = 'chat-item-main';
+        mainDiv.innerHTML = `
+          <svg class="chat-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span class="chat-item-title">${escapeHtml(chat.title || 'New Chat')}</span>
+        `;
 
-      // Step 2: Query Supabase for this authenticated user's conversations
+        const btnDel = document.createElement('button');
+        btnDel.type = 'button';
+        btnDel.className = 'btn-delete-chat';
+        btnDel.title = 'Delete chat';
+        btnDel.setAttribute('aria-label', 'Delete chat');
+        btnDel.innerHTML = `
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        `;
+
+        item.appendChild(mainDiv);
+        item.appendChild(btnDel);
+
+        item.addEventListener('click', () => {
+          if (chat.id !== currentChatId) {
+            loadChat(chat.id);
+          }
+          // Close mobile sidebar if open
+          if (chatSidebar && window.innerWidth <= 768) {
+            chatSidebar.classList.remove('open');
+          }
+        });
+
+        btnDel.addEventListener('click', (e) => handleDeleteChat(chat.id, e));
+
+        chatHistoryList.appendChild(item);
+      });
+    }
+
+    // =========================================================
+    // LOAD USER'S CHAT LIST (STRICTLY SCOPED TO CURRENT USER)
+    // =========================================================
+    async function loadUserChatList(user) {
+      if (!user || !user.id) return;
+      userChats = [];
+
+      // Query Supabase for this authenticated user's chats
       if (supabaseClient) {
         try {
-          const { data: convs, error: convError } = await supabaseClient
-            .from('conversations')
+          const { data, error } = await supabaseClient
+            .from('chats')
             .select('*')
             .eq('user_id', user.id)
-            .order('updated_at', { ascending: false })
-            .limit(1);
+            .order('updated_at', { ascending: false });
 
-          if (!convError && convs && convs.length > 0) {
-            const latestConv = convs[0];
-            currentChatId = latestConv.id;
-
-            // Load only messages belonging to this owned chat and this user
-            const { data: msgs, error: msgError } = await supabaseClient
-              .from('messages')
-              .select('*')
-              .eq('conversation_id', currentChatId)
-              .eq('user_id', user.id)
-              .order('created_at', { ascending: true });
-
-            if (!msgError && msgs && msgs.length > 0) {
-              chatHistory = [];
-              msgs.forEach(msg => {
-                chatHistory.push({ role: msg.role, content: msg.content });
-                if (msg.role === 'user') {
-                  renderUserMessage(msg.content, false);
-                } else if (msg.role === 'assistant') {
-                  renderAssistantMessage(msg.content, false);
-                }
-              });
-              if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
-              kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
-              // Cache only in user-specific namespaced storage
-              try {
-                localStorage.setItem(getUserStorageKey(user.id), JSON.stringify(chatHistory));
-              } catch (_) {}
-              loadedFromSupabase = true;
-            }
+          if (!error && Array.isArray(data) && data.length > 0) {
+            userChats = data;
           }
         } catch (err) {
-          console.warn('Supabase chat load error:', err);
+          console.warn('[CHAT] Supabase chats query failed:', err);
         }
       }
 
-      // Step 3: If not found in Supabase (e.g. database schema not applied yet),
-      // recover strictly from this user's namespaced local storage.
-      if (!loadedFromSupabase) {
-        try {
-          const userKey = getUserStorageKey(user.id);
-          const raw = localStorage.getItem(userKey);
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              chatHistory = parsed;
-              if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
-              chatHistory.forEach(msg => {
-                if (msg.role === 'user') {
-                  renderUserMessage(msg.content, false);
-                } else if (msg.role === 'assistant') {
-                  renderAssistantMessage(msg.content, false);
-                }
-              });
-              kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
-            }
-          }
-        } catch (err) {
-          console.warn('Local namespaced recovery load error:', err);
-        }
+      // Fallback to isolated user chat list if table not created
+      if (userChats.length === 0) {
+        userChats = getLocalUserChats(user.id);
+      }
+
+      renderChatHistoryList(userChats);
+
+      // Restore last active chat or open newest or create new
+      let lastChatId = null;
+      try {
+        lastChatId = localStorage.getItem(`jerryys_ai_last_chat_${user.id}`);
+      } catch (_) {}
+
+      if (lastChatId && userChats.some(c => c.id === lastChatId)) {
+        await loadChat(lastChatId);
+      } else if (userChats.length > 0) {
+        await loadChat(userChats[0].id);
+      } else {
+        await handleNewChat(false);
       }
     }
 
-    function saveChatHistory() {
+    // =========================================================
+    // NEW CHAT: CREATE ROW, SET currentChatId, CLEAR MESSAGE AREA
+    // =========================================================
+    async function handleNewChat(focusInput = true) {
       if (!currentUser || !currentUser.id) return;
-      try {
-        localStorage.setItem(getUserStorageKey(currentUser.id), JSON.stringify(chatHistory));
-      } catch (err) {
-        console.warn('Could not save user history:', err);
-      }
-    }
 
-    async function saveMessageToSupabase(role, content) {
-      if (!supabaseClient || !currentUser || !currentUser.id) return;
-      try {
-        if (!currentChatId) {
-          const titleSnippet = content.trim().slice(0, 42) + (content.length > 42 ? '...' : '');
-          const { data: newConv, error: convErr } = await supabaseClient
-            .from('conversations')
+      clearMessageContainer();
+      chatHistory = [];
+
+      const newChatId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : ('chat_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7));
+
+      const newChat = {
+        id: newChatId,
+        user_id: currentUser.id,
+        title: 'New Chat',
+        profile: currentProfile || 'default',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      // Try inserting into Supabase
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient
+            .from('chats')
             .insert({
               user_id: currentUser.id,
-              title: titleSnippet,
-              profile: currentProfile || 'default',
-              updated_at: new Date().toISOString()
+              title: 'New Chat',
+              profile: currentProfile || 'default'
             })
             .select()
             .single();
 
-          if (convErr || !newConv) {
-            console.warn('Supabase conversation insert skipped:', convErr?.message);
-            return;
+          if (!error && data) {
+            newChat.id = data.id;
           }
-          currentChatId = newConv.id;
+        } catch (err) {
+          console.warn('[CHAT] Supabase chat insert skipped:', err);
+        }
+      }
+
+      saveLocalUserChat(currentUser.id, newChat);
+
+      currentChatId = newChat.id;
+      userChats = [newChat, ...userChats.filter(c => c.id !== newChat.id)];
+      renderChatHistoryList(userChats);
+      highlightActiveChat(currentChatId);
+
+      try {
+        localStorage.setItem(`jerryys_ai_last_chat_${currentUser.id}`, currentChatId);
+      } catch (_) {}
+
+      if (focusInput && kuramaInput) {
+        kuramaInput.focus();
+      }
+
+      // Close mobile sidebar if open
+      if (chatSidebar && window.innerWidth <= 768) {
+        chatSidebar.classList.remove('open');
+      }
+    }
+
+    if (btnNewChat) btnNewChat.addEventListener('click', () => handleNewChat(true));
+    if (btnSidebarNewChat) btnSidebarNewChat.addEventListener('click', () => handleNewChat(true));
+
+    // Mobile sidebar toggle
+    if (btnSidebarToggle && chatSidebar) {
+      btnSidebarToggle.addEventListener('click', () => {
+        chatSidebar.classList.toggle('open');
+      });
+    }
+
+    // =========================================================
+    // DELETE CHAT SUPPORT
+    // =========================================================
+    async function handleDeleteChat(chatId, event) {
+      if (event) {
+        event.stopPropagation();
+      }
+      if (!currentUser || !currentUser.id || !chatId) return;
+
+      // Delete from Supabase
+      if (supabaseClient) {
+        try {
+          await supabaseClient
+            .from('chats')
+            .delete()
+            .eq('id', chatId)
+            .eq('user_id', currentUser.id);
+        } catch (err) {
+          console.warn('[CHAT] Supabase delete error:', err);
+        }
+      }
+
+      // Delete from local storage
+      deleteLocalUserChat(currentUser.id, chatId);
+
+      // Remove from in-memory list
+      userChats = userChats.filter(c => c.id !== chatId);
+      renderChatHistoryList(userChats);
+
+      // If the deleted chat was currently open
+      if (currentChatId === chatId) {
+        clearMessageContainer();
+        chatHistory = [];
+        if (userChats.length > 0) {
+          await loadChat(userChats[0].id);
         } else {
-          supabaseClient
-            .from('conversations')
-            .update({ updated_at: new Date().toISOString() })
-            .eq('id', currentChatId)
-            .eq('user_id', currentUser.id)
-            .then();
+          await handleNewChat(false);
+        }
+      }
+      showToast('Chat deleted');
+    }
+
+    // =========================================================
+    // FIRST MESSAGE TITLE GENERATION & UPDATED_AT TOUCH
+    // =========================================================
+    function generateChatTitle(firstMessage) {
+      if (!firstMessage) return 'New Chat';
+      const words = firstMessage
+        .replace(/[^\w\s]/gi, ' ')
+        .trim()
+        .split(/\s+/)
+        .slice(0, 6);
+      if (words.length === 0) return 'New Chat';
+      const title = words
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+      return title.length > 38 ? title.slice(0, 38) + '...' : title;
+    }
+
+    async function updateChatTitleIfNew(chatId, firstMessage) {
+      const chat = userChats.find(c => c.id === chatId);
+      if (chat && (chat.title === 'New Chat' || !chat.title)) {
+        const newTitle = generateChatTitle(firstMessage);
+        chat.title = newTitle;
+        chat.updated_at = new Date().toISOString();
+
+        if (supabaseClient && currentUser) {
+          try {
+            await supabaseClient
+              .from('chats')
+              .update({ title: newTitle, updated_at: chat.updated_at })
+              .eq('id', chatId)
+              .eq('user_id', currentUser.id);
+          } catch (_) {}
         }
 
-        const { error: msgErr } = await supabaseClient
-          .from('messages')
-          .insert({
-            conversation_id: currentChatId,
-            user_id: currentUser.id,
-            role: role,
-            content: content
-          });
+        saveLocalUserChat(currentUser.id, chat);
+        renderChatHistoryList(userChats);
+        highlightActiveChat(chatId);
+      }
+    }
 
-        if (msgErr) {
-          console.warn('Supabase message insert skipped:', msgErr?.message);
+    async function saveMessageRow(role, content) {
+      if (!currentUser || !currentUser.id || !currentChatId) return;
+
+      // 1. Try Supabase
+      if (supabaseClient) {
+        try {
+          await supabaseClient
+            .from('messages')
+            .insert({
+              chat_id: currentChatId,
+              user_id: currentUser.id,
+              role: role,
+              content: content
+            });
+        } catch (err) {
+          console.warn('[CHAT] Supabase message insert skipped:', err);
         }
-      } catch (err) {
-        console.warn('Supabase message sync skipped:', err);
+      }
+
+      // 2. Save to isolated local chat messages
+      saveLocalChatMessage(currentUser.id, currentChatId, role, content);
+    }
+
+    async function touchChatUpdatedAt(chatId) {
+      const chat = userChats.find(c => c.id === chatId);
+      const now = new Date().toISOString();
+      if (chat) {
+        chat.updated_at = now;
+        userChats = [chat, ...userChats.filter(c => c.id !== chatId)];
+        renderChatHistoryList(userChats);
+        highlightActiveChat(chatId);
+      }
+
+      if (supabaseClient && currentUser) {
+        try {
+          await supabaseClient
+            .from('chats')
+            .update({ updated_at: now })
+            .eq('id', chatId)
+            .eq('user_id', currentUser.id);
+        } catch (_) {}
+      }
+
+      if (currentUser && chat) {
+        saveLocalUserChat(currentUser.id, chat);
       }
     }
 
     // =========================================================
-    // LOGOUT HANDLER
+    // LOGOUT HANDLER (CLEARS ALL USER STATE & REDIRECTS)
     // =========================================================
     async function handleLogout() {
       try {
@@ -2753,15 +3325,9 @@
           await supabaseClient.auth.signOut();
         }
       } catch (err) {
-        console.error('Logout error:', err);
+        console.error('[AUTH] Logout error:', err);
       } finally {
-        resetChatState();
-        currentUser = null;
-        renderUserProfile(null);
-        try {
-          localStorage.removeItem('jerryys_ai_history');
-        } catch (_) {}
-        window.location.href = '/';
+        await handleAuthUserChange(null);
       }
     }
 
@@ -2789,8 +3355,43 @@
     });
 
     // =========================================================
-    // CHAT PAGE AUTH GUARD & SESSION RESTORATION
+    // AUTH CHANGE COORDINATOR (PREVENTS CONCURRENT INITIALIZATION)
     // =========================================================
+    async function handleAuthUserChange(user) {
+      if (!user || !user.id) {
+        currentAuthUserId = null;
+        currentUser = null;
+        currentChatId = null;
+        chatHistory = [];
+        userChats = [];
+        clearMessageContainer();
+        renderUserProfile(null);
+        renderChatHistoryList([]);
+        window.location.replace('/');
+        return;
+      }
+
+      // If already initialized for this exact user, ignore duplicate event
+      if (currentAuthUserId === user.id) {
+        return;
+      }
+
+      currentAuthUserId = user.id;
+      currentUser = user;
+
+      // Immediately reset previous state
+      currentChatId = null;
+      chatHistory = [];
+      userChats = [];
+      clearMessageContainer();
+      renderUserProfile(user);
+      renderChatHistoryList([]);
+
+      // Load newly authenticated user's chats
+      await loadUserChatList(user);
+    }
+
+    // Auth guard with 8s failsafe timeout
     let chatAuthSettled = false;
     const chatAuthTimeout = setTimeout(() => {
       if (!chatAuthSettled) {
@@ -2807,7 +3408,15 @@
       }
 
       try {
-        const { data: { session } = {}, error } = await supabaseClient.auth.getSession();
+        let session = null;
+        let error = null;
+        if (typeof window !== 'undefined' && window.__mockSession) {
+          session = window.__mockSession;
+        } else {
+          const res = await supabaseClient.auth.getSession();
+          session = res.data?.session;
+          error = res.error;
+        }
         if (chatAuthSettled) return;
 
         if (error || !session || !session.user) {
@@ -2820,9 +3429,9 @@
         chatAuthSettled = true;
         clearTimeout(chatAuthTimeout);
 
-        await loadUserChats(session.user);
+        await handleAuthUserChange(session.user);
 
-        // Clean up OAuth hash fragments if any
+        // Clean up hash fragments if any
         if (window.location.hash && (window.location.hash.includes('access_token=') || window.location.hash.includes('error='))) {
           setTimeout(() => {
             window.history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -2842,15 +3451,22 @@
       initChatAuthGuard();
 
       supabaseClient.auth.onAuthStateChange(async (event, session) => {
+        if (typeof window !== 'undefined' && window.__mockSession) return;
         if (!session || !session.user) {
-          resetChatState();
-          currentUser = null;
-          renderUserProfile(null);
-          window.location.replace('/');
+          chatAuthSettled = true;
+          clearTimeout(chatAuthTimeout);
+          await handleAuthUserChange(null);
           return;
         }
-        if (!currentUser || currentUser.id !== session.user.id) {
-          await loadUserChats(session.user);
+
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+          chatAuthSettled = true;
+          clearTimeout(chatAuthTimeout);
+          await handleAuthUserChange(session.user);
+        } else if (event === 'SIGNED_OUT') {
+          chatAuthSettled = true;
+          clearTimeout(chatAuthTimeout);
+          await handleAuthUserChange(null);
         }
       });
     } else {
@@ -2876,20 +3492,6 @@
     }
     initProfileUI();
 
-    // New Chat handler
-    if (btnNewChat) {
-      btnNewChat.addEventListener('click', () => {
-        resetChatState();
-        if (currentUser && currentUser.id) {
-          try {
-            localStorage.removeItem(getUserStorageKey(currentUser.id));
-          } catch (_) {}
-        }
-        showToast('Started new chat');
-        if (kuramaInput) kuramaInput.focus();
-      });
-    }
-
     // Quick chip buttons
     document.querySelectorAll('.kurama-chip').forEach(chip => {
       chip.addEventListener('click', () => {
@@ -2897,18 +3499,21 @@
       });
     });
 
-    // Input handlers: Enter to send, Shift+Enter for new line
+    // Form and Keyboard Input handlers (Single submission guard)
     kuramaInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        kuramaForm.dispatchEvent(new Event('submit'));
+        const query = kuramaInput.value.trim();
+        if (!query || isProcessingMessage) return;
+        kuramaInput.value = '';
+        handleUserPrompt(query);
       }
     });
 
     kuramaForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const query = kuramaInput.value.trim();
-      if (!query) return;
+      if (!query || isProcessingMessage) return;
       kuramaInput.value = '';
       handleUserPrompt(query);
     });
@@ -2934,13 +3539,11 @@
           });
         }
         let rawHtml = marked.parse(markdown);
-        // Wrap tables in responsive container for smooth horizontal scrolling
         rawHtml = rawHtml.replace(/<table(\s*[^>]*)>([\s\S]*?)<\/table>/gi, '<div class="table-wrapper"><table$1>$2</table></div>');
         return DOMPurify.sanitize(rawHtml, {
           ADD_ATTR: ['target', 'rel']
         });
       }
-      // Safe fallback if CDN scripts fail to load
       const esc = (str) => str.replace(/[&<>"']/g, (m) => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
       }[m]));
@@ -3016,28 +3619,46 @@
       }
     }
 
+    // =========================================================
+    // SAVE MESSAGE ONLY ONCE & QUERY OLLAMA
+    // =========================================================
     async function handleUserPrompt(promptText) {
       const cleanPrompt = promptText.trim();
-      if (!cleanPrompt) return;
+      if (!cleanPrompt || isProcessingMessage) return;
 
-      if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
+      isProcessingMessage = true;
+      if (btnSendPrompt) btnSendPrompt.disabled = true;
+      if (kuramaInput) kuramaInput.disabled = true;
 
-      // 1. Render User Message
-      renderUserMessage(cleanPrompt, true);
-
-      // 2. Capture history to send (most recent 12 prior messages)
-      const historyToSend = chatHistory.slice(-12);
-
-      // 3. Append user message to history & save
-      chatHistory.push({ role: 'user', content: cleanPrompt });
-      saveChatHistory();
-      saveMessageToSupabase('user', cleanPrompt);
-
-      // 4. Show thinking indicator
-      showThinking();
-
-      // 5. Send POST to /api/chat
       try {
+        if (!currentChatId) {
+          await handleNewChat(false);
+        }
+
+        if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
+
+        // 1. Render User Message ONCE
+        renderUserMessage(cleanPrompt, true);
+
+        // 2. Auto-generate title if this is the first message
+        await updateChatTitleIfNew(currentChatId, cleanPrompt);
+
+        // 3. History to send to Ollama (last 12 prior messages)
+        const historyToSend = chatHistory.slice(-12);
+
+        // 4. Append user message to in-memory history ONCE
+        chatHistory.push({ role: 'user', content: cleanPrompt });
+
+        // 5. Save user message to database ONCE
+        await saveMessageRow('user', cleanPrompt);
+
+        // 6. Update updated_at
+        await touchChatUpdatedAt(currentChatId);
+
+        // 7. Show thinking indicator
+        showThinking();
+
+        // 8. Query /api/chat
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -3053,10 +3674,18 @@
         if (res.ok) {
           const data = await res.json();
           const reply = data.reply || '';
+
+          // 9. Append assistant reply to in-memory history ONCE
           chatHistory.push({ role: 'assistant', content: reply });
-          saveChatHistory();
-          saveMessageToSupabase('assistant', reply);
+
+          // 10. Save assistant reply to database ONCE
+          await saveMessageRow('assistant', reply);
+
+          // 11. Render assistant reply ONCE
           renderAssistantMessage(reply, true);
+
+          // 12. Update updated_at
+          await touchChatUpdatedAt(currentChatId);
         } else {
           let errDetail = '';
           try {
@@ -3075,6 +3704,13 @@
       } catch (err) {
         hideThinking();
         renderErrorMessage("Jerryy's AI could not connect to the local model. Make sure Ollama is running.");
+      } finally {
+        isProcessingMessage = false;
+        if (btnSendPrompt) btnSendPrompt.disabled = false;
+        if (kuramaInput) {
+          kuramaInput.disabled = false;
+          kuramaInput.focus();
+        }
       }
     }
 
@@ -3105,6 +3741,10 @@
     checkOllamaHealth();
 
     window.showToast = showToast;
+    window.handleAuthUserChange = handleAuthUserChange;
+    window.handleUserPrompt = handleUserPrompt;
+    window.loadChat = loadChat;
+    window.handleNewChat = handleNewChat;
 
     function escapeHtml(str) {
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

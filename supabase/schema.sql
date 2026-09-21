@@ -1,9 +1,19 @@
 -- =========================================================
 -- Jerryy's AI: Supabase Database Schema
--- Chat Conversations and Messages Persistence with RLS
+-- Per-User Chat History with Row Level Security (RLS)
 -- =========================================================
 
--- 1. Create Conversations Table
+-- 1. Create Chats Table
+CREATE TABLE IF NOT EXISTS public.chats (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL DEFAULT 'New Chat',
+    profile TEXT NOT NULL DEFAULT 'default',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Backwards compatibility table/view for 'conversations'
 CREATE TABLE IF NOT EXISTS public.conversations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -13,28 +23,57 @@ CREATE TABLE IF NOT EXISTS public.conversations (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 2. Create Messages Table
+-- 2. Create Messages Table (with chat_id and conversation_id support)
 CREATE TABLE IF NOT EXISTS public.messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    conversation_id UUID NOT NULL REFERENCES public.conversations(id) ON DELETE CASCADE,
+    chat_id UUID REFERENCES public.chats(id) ON DELETE CASCADE,
+    conversation_id UUID REFERENCES public.conversations(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
     content TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 3. Create Indexes for High Performance
-CREATE INDEX IF NOT EXISTS idx_conversations_user_id ON public.conversations(user_id);
-CREATE INDEX IF NOT EXISTS idx_conversations_updated_at ON public.conversations(updated_at DESC);
+-- 3. Create High-Performance Indexes
+CREATE INDEX IF NOT EXISTS idx_chats_user_id ON public.chats(user_id);
+CREATE INDEX IF NOT EXISTS idx_chats_updated_at ON public.chats(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_chat_id ON public.messages(chat_id);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON public.messages(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_messages_user_id ON public.messages(user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_created_at ON public.messages(created_at ASC);
 
 -- 4. Enable Row Level Security (RLS)
+ALTER TABLE public.chats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 
--- 5. Conversations RLS Policies
+-- 5. Chats RLS Policies
+DROP POLICY IF EXISTS "Users can view their own chats" ON public.chats;
+CREATE POLICY "Users can view their own chats"
+    ON public.chats
+    FOR SELECT
+    USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert their own chats" ON public.chats;
+CREATE POLICY "Users can insert their own chats"
+    ON public.chats
+    FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update their own chats" ON public.chats;
+CREATE POLICY "Users can update their own chats"
+    ON public.chats
+    FOR UPDATE
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete their own chats" ON public.chats;
+CREATE POLICY "Users can delete their own chats"
+    ON public.chats
+    FOR DELETE
+    USING (auth.uid() = user_id);
+
+-- 6. Conversations RLS Policies (Compatibility)
 DROP POLICY IF EXISTS "Users can view their own conversations" ON public.conversations;
 CREATE POLICY "Users can view their own conversations"
     ON public.conversations
@@ -60,7 +99,7 @@ CREATE POLICY "Users can delete their own conversations"
     FOR DELETE
     USING (auth.uid() = user_id);
 
--- 6. Messages RLS Policies
+-- 7. Messages RLS Policies
 DROP POLICY IF EXISTS "Users can view their own messages" ON public.messages;
 CREATE POLICY "Users can view their own messages"
     ON public.messages
