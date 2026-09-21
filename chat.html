@@ -1341,136 +1341,118 @@
     }
 
     /* =========================================================
-       SUPABASE AUTHENTICATION OVERLAY & USER PROFILE
+       SUPABASE AUTHENTICATION & LANDING HERO STATES
        ========================================================= */
-    .auth-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 99999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      transition: opacity 0.45s var(--ease-smooth), visibility 0.45s;
-    }
-
-    .auth-overlay.auth-hidden {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-    }
-
-    .auth-card {
-      position: relative;
-      width: 90%;
-      max-width: 440px;
-      background: rgba(14, 18, 28, 0.78);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.85), 0 0 40px rgba(57, 255, 20, 0.08);
-      border-radius: 24px;
-      padding: 44px 36px;
-      text-align: center;
+    .hero-state-panel {
+      width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      animation: auth-card-appear 0.45s var(--ease-smooth);
+      animation: hero-fade-in 0.35s var(--ease-smooth);
     }
 
-    @keyframes auth-card-appear {
-      from { opacity: 0; transform: translateY(16px) scale(0.96); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+    @keyframes hero-fade-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    .auth-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 14px;
-      border-radius: 999px;
-      background: rgba(57, 255, 20, 0.1);
-      border: 1px solid rgba(57, 255, 20, 0.3);
-      color: #39FF14;
-      font-family: var(--font-general);
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      margin-bottom: 20px;
-    }
-
-    .auth-badge-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #39FF14;
-      box-shadow: 0 0 8px #39FF14;
-    }
-
-    .auth-title {
-      font-family: var(--font-playfair);
-      font-size: 2.3rem;
+    .landing-subtitle {
+      font-family: var(--font-raleway);
+      font-size: clamp(1.1rem, 2.2vw, 1.45rem);
       font-weight: 700;
-      color: #ffffff;
-      letter-spacing: -0.02em;
-      margin-bottom: 6px;
-      line-height: 1.2;
+      color: #1848d6;
+      letter-spacing: -0.01em;
+      margin-top: -6px;
+      margin-bottom: 16px;
+      text-align: center;
     }
 
-    .auth-subtitle {
-      font-family: var(--font-general);
-      font-size: 0.78rem;
-      font-weight: 600;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.6);
-      margin-bottom: 18px;
+    .btn-google-landing {
+      background: #ffffff !important;
+      color: #1f2937 !important;
+      border: 1px solid rgba(0, 0, 0, 0.12) !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.04) !important;
     }
 
-    .auth-desc {
-      font-family: var(--font-outfit);
-      font-size: 0.95rem;
-      line-height: 1.55;
-      color: rgba(255, 255, 255, 0.75);
-      margin-bottom: 30px;
+    .btn-google-landing:hover {
+      background: #f8fafc !important;
+      color: #111827 !important;
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14) !important;
     }
 
-    .btn-google-login {
+    .landing-user-badge {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
       gap: 12px;
-      width: 100%;
-      padding: 14px 24px;
-      background: #ffffff;
-      color: #111827;
-      border: none;
+      padding: 6px 16px 6px 8px;
       border-radius: 999px;
-      font-family: var(--font-outfit);
-      font-size: 1rem;
-      font-weight: 600;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 6px 18px rgba(25, 45, 95, 0.08);
+      margin-bottom: 16px;
+    }
+
+    .landing-user-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #2F69FF;
+      box-shadow: 0 0 10px rgba(47, 105, 255, 0.35);
+      background: #e2e8f0;
+    }
+
+    .hero-actions-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hero-logout-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px solid rgba(220, 38, 38, 0.25);
+      color: #dc2626;
+      font-family: var(--font-raleway);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
       cursor: pointer;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-      transition: transform 0.25s var(--ease-smooth), box-shadow 0.25s var(--ease-smooth), background-color 0.2s;
+      transition: all 0.25s var(--ease-smooth);
+      margin-top: 6px;
     }
 
-    .btn-google-login:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 28px rgba(255, 255, 255, 0.25);
-      background: #f8fafc;
+    .hero-logout-btn:hover {
+      background: rgba(254, 226, 226, 0.75);
+      border-color: rgba(220, 38, 38, 0.5);
+      transform: translateY(-1px);
     }
 
-    .btn-google-login:active {
-      transform: translateY(0);
+    .hero-spinner-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px 0 6px;
     }
 
-    .btn-google-login svg {
-      width: 20px;
-      height: 20px;
-      flex-shrink: 0;
+    .hero-spinner {
+      width: 30px;
+      height: 30px;
+      border: 3px solid rgba(47, 105, 255, 0.2);
+      border-top-color: #2F69FF;
+      border-radius: 50%;
+      animation: hero-spin 0.8s linear infinite;
+    }
+
+    @keyframes hero-spin {
+      to { transform: rotate(360deg); }
     }
 
     /* User Profile Header Bar */
@@ -1846,33 +1828,9 @@
 <body>
 
   <!-- =========================================================
-       SUPABASE AUTHENTICATION OVERLAY
-       ========================================================= -->
-  <div id="auth-overlay" class="auth-overlay">
-    <div class="auth-card">
-      <div class="auth-badge">
-        <span class="auth-badge-dot"></span>
-        <span>LOCAL LEARNING MODEL</span>
-      </div>
-      <h1 class="auth-title">Jerryy's AI</h1>
-      <p class="auth-subtitle">LOCAL LEARNING MODEL</p>
-      <p class="auth-desc">Sign in with your Google account to access your personal syllabus intelligence and exam preparation assistant.</p>
-      <button id="btn-google-login" class="btn-google-login" type="button" aria-label="Continue with Google">
-        <svg class="google-icon" width="20" height="20" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-        </svg>
-        <span>Continue with Google</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- =========================================================
        VIEW 1: 3D SPHERE FIELD (LANDING / HERO CANVAS)
        ========================================================= -->
-  <div id="view-canvas" class="view-container hidden-view">
+  <div id="view-canvas" class="view-container active-view">
     <div id="bgGradient"></div>
     <div id="webglWrap">
       <canvas id="webgl"></canvas>
@@ -1884,33 +1842,83 @@
         <div class="canvas-brand">Jerryy's AI</div>
         <div class="canvas-status">
           <span class="status-dot-blue"></span>
-          <span>EXAM PREPARATION MODEL / UNDERGOING TRAINING</span>
+          <span>LOCAL LEARNING MODEL</span>
         </div>
         <div class="canvas-actions">
           <button id="btn-canvas-reset" class="canvas-pill-btn" aria-label="Reset 3D Scene">Reset</button>
         </div>
       </header>
 
-      <!-- Middle Hero Section with "Get Started" CTA -->
-      <section class="landing-hero-center">
-        <div class="landing-kicker">
-          <span class="status-dot-blue"></span>
-          <span>AI EXAM PREPARATION MODEL</span>
+      <!-- Middle Hero Section with Authentication & Welcome States -->
+      <section class="landing-hero-center" id="hero-auth-card">
+        <!-- STATE 1: CHECKING SESSION -->
+        <div id="hero-state-checking" class="hero-state-panel">
+          <div class="landing-kicker">
+            <span class="status-dot-blue"></span>
+            <span>LOCAL LEARNING MODEL</span>
+          </div>
+          <h1 class="landing-title">Jerryy's AI</h1>
+          <p class="landing-desc" style="margin-bottom: 24px;">Connecting to your personal learning assistant...</p>
+          <div class="hero-spinner-row">
+            <div class="hero-spinner"></div>
+          </div>
         </div>
-        <h1 class="landing-title">Intelligent Exam Preparation Model</h1>
-        <p class="landing-desc">A specialized neural architecture engineered for comprehensive exam mastery, conceptual reasoning, and syllabus intelligence &mdash; currently undergoing active model training and refinement.</p>
-        <button id="btn-get-started" class="btn-get-started" aria-label="Explore Model">
-          <span class="btn-text">Explore Model</span>
-          <svg class="btn-arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-          </svg>
-        </button>
+
+        <!-- STATE 2: USER NOT LOGGED IN -->
+        <div id="hero-state-logged-out" class="hero-state-panel" style="display: none;">
+          <div class="landing-kicker">
+            <span class="status-dot-blue"></span>
+            <span>LOCAL LEARNING MODEL</span>
+          </div>
+          <h1 class="landing-title">Jerryy's AI</h1>
+          <h2 class="landing-subtitle">Your Personal Local Learning Assistant</h2>
+          <p class="landing-desc">Study, practise coding, prepare for exams,<br>revise concepts and learn with your own AI assistant.</p>
+          <button id="btn-hero-google-login" class="btn-get-started btn-google-landing" type="button" aria-label="Continue with Google">
+            <svg class="google-icon" width="20" height="20" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span class="btn-text">Continue with Google</span>
+          </button>
+        </div>
+
+        <!-- STATE 3: USER LOGGED IN -->
+        <div id="hero-state-logged-in" class="hero-state-panel" style="display: none;">
+          <div class="landing-user-badge">
+            <img id="hero-user-avatar" class="landing-user-avatar" src="" alt="Google Profile Picture">
+            <div class="landing-kicker" style="margin-bottom: 0;">
+              <span class="status-dot-blue"></span>
+              <span>JERRYY'S AI IS READY</span>
+            </div>
+          </div>
+          <h1 class="landing-title">Welcome, <span id="hero-user-firstname">Learner</span></h1>
+          <h2 class="landing-subtitle">Jerryy's AI is ready.</h2>
+          <p class="landing-desc">Continue learning, revise a topic, practise coding,<br>or start a new conversation.</p>
+          <div class="hero-actions-wrap">
+            <button id="btn-get-started" class="btn-get-started" aria-label="Explore Model">
+              <span class="btn-text">Explore Model</span>
+              <svg class="btn-arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+            <button id="btn-hero-logout" class="hero-logout-btn" type="button" aria-label="Logout">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
       </section>
 
       <!-- Footer Info -->
       <footer class="canvas-footer">
-        Jerryy's AI / EXAM PREPARATION MODEL / IN PROGRESS
+        Jerryy's AI &middot; LOCAL LEARNING MODEL &middot; READY
       </footer>
     </div>
   </div>
@@ -1918,7 +1926,7 @@
   <!-- =========================================================
        VIEW 2: LOOPSTACK THEME SPECIFICATION
        ========================================================= -->
-  <div id="view-loopstack" class="view-container active-view">
+  <div id="view-loopstack" class="view-container hidden-view">
     <!-- Top gradient overlay -->
     <img src="https://api.getlayers.ai/storage/v1/object/public/public/assets/loopstack-f8c64439bf/black_gradient.svg" alt="Top Gradient" id="top-gradient">
 
@@ -2017,105 +2025,105 @@
 
     <!-- Custom cursor elements -->
     <div id="cursor-ring" class="cursor-ring-outline"></div>
+  </div>
 
-    <!-- =========================================================
-         INTEGRATED JERRYY'S AI BOT MODAL
-         ========================================================= -->
-    <div id="kurama-modal" class="kurama-modal-overlay">
-      <div class="kurama-modal-card">
-        <!-- Header -->
-        <div class="kurama-modal-header">
-          <div class="kurama-modal-title">
-            <div class="kurama-mini-orb"></div>
-            <div>
-              <div class="kurama-title-text">Jerryy's AI</div>
-              <div class="kurama-sub-text">LOCAL LEARNING MODEL</div>
-            </div>
-          </div>
-          <div class="modal-header-actions">
-            <button id="btn-new-chat" class="btn-new-chat" title="Start a New Conversation" aria-label="New Chat">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              <span>New Chat</span>
-            </button>
-            <a href="overview.html" class="modal-overview-link" title="Open Platform Overview">
-              <span>Overview</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="7" y1="17" x2="17" y2="7"></line>
-                <polyline points="7 7 17 7 17 17"></polyline>
-              </svg>
-            </a>
-            <div id="ollama-status-badge" class="canvas-status" style="background: rgba(57,255,20,0.1); border-color: rgba(57,255,20,0.3); color: #39FF14;">
-              <span class="badge-dot" style="background:#39FF14; box-shadow: 0 0 10px #39FF14; width:6px; height:6px; border-radius:50%;"></span>
-              <span id="ollama-status-text">OLLAMA ONLINE</span>
-            </div>
-            <button id="btn-close-kurama" class="btn-close-modal" aria-label="Close Jerryy's AI Dialog">×</button>
+  <!-- =========================================================
+       INTEGRATED JERRYY'S AI BOT MODAL (OVERLAY)
+       ========================================================= -->
+  <div id="kurama-modal" class="kurama-modal-overlay">
+    <div class="kurama-modal-card">
+      <!-- Header -->
+      <div class="kurama-modal-header">
+        <div class="kurama-modal-title">
+          <div class="kurama-mini-orb"></div>
+          <div>
+            <div class="kurama-title-text">Jerryy's AI</div>
+            <div class="kurama-sub-text">LOCAL LEARNING MODEL</div>
           </div>
         </div>
-
-        <!-- Logged-in User Profile Bar -->
-        <div class="user-profile-bar" id="user-profile-bar" style="display: none;">
-          <div class="user-profile-info">
-            <img id="user-avatar" class="user-avatar" src="" alt="Google Profile Picture">
-            <div class="user-details">
-              <span id="user-name" class="user-name">User</span>
-              <span id="user-email" class="user-email">user@example.com</span>
-            </div>
-          </div>
-          <button id="btn-logout" class="btn-logout" type="button" aria-label="Logout">
+        <div class="modal-header-actions">
+          <button id="btn-new-chat" class="btn-new-chat" title="Start a New Conversation" aria-label="New Chat">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
-            <span>Logout</span>
+            <span>New Chat</span>
           </button>
+          <a href="overview.html" class="modal-overview-link" title="Open Platform Overview">
+            <span>Overview</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="7" y1="17" x2="17" y2="7"></line>
+              <polyline points="7 7 17 7 17 17"></polyline>
+            </svg>
+          </a>
+          <div id="ollama-status-badge" class="canvas-status" style="background: rgba(57,255,20,0.1); border-color: rgba(57,255,20,0.3); color: #39FF14;">
+            <span class="badge-dot" style="background:#39FF14; box-shadow: 0 0 10px #39FF14; width:6px; height:6px; border-radius:50%;"></span>
+            <span id="ollama-status-text">OLLAMA ONLINE</span>
+          </div>
+          <button id="btn-close-kurama" class="btn-close-modal" aria-label="Close Jerryy's AI Dialog">×</button>
         </div>
+      </div>
 
-        <!-- Mode / Profile Selector Bar -->
-        <div class="profile-selector-container">
-          <span class="profile-selector-label">Mode:</span>
-          <div class="profile-selector" id="profile-selector">
-            <button type="button" class="profile-pill active" data-profile="default">General</button>
-            <button type="button" class="profile-pill" data-profile="exam">Exam Prep</button>
-            <button type="button" class="profile-pill" data-profile="dbms">DBMS</button>
-            <button type="button" class="profile-pill" data-profile="programming">Programming</button>
-            <button type="button" class="profile-pill" data-profile="study_support">Study Support</button>
+      <!-- Logged-in User Profile Bar -->
+      <div class="user-profile-bar" id="user-profile-bar" style="display: none;">
+        <div class="user-profile-info">
+          <img id="user-avatar" class="user-avatar" src="" alt="Google Profile Picture">
+          <div class="user-details">
+            <span id="user-name" class="user-name">User</span>
+            <span id="user-email" class="user-email">user@example.com</span>
           </div>
         </div>
+        <button id="btn-logout" class="btn-logout" type="button" aria-label="Logout">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          <span>Logout</span>
+        </button>
+      </div>
 
-        <!-- Chat Body -->
-        <div class="kurama-modal-body" id="kurama-chat-body">
-          <div class="kurama-empty-state" id="kurama-empty-state">
-            <div class="kurama-empty-tag">LOCAL LEARNING MODEL</div>
-            <h2 class="kurama-empty-title">What do you want to learn?</h2>
-            <p class="kurama-empty-sub">Ask a question, prepare for an exam, practise coding, revise a topic, or test your understanding.</p>
+      <!-- Mode / Profile Selector Bar -->
+      <div class="profile-selector-container">
+        <span class="profile-selector-label">Mode:</span>
+        <div class="profile-selector" id="profile-selector">
+          <button type="button" class="profile-pill active" data-profile="default">General</button>
+          <button type="button" class="profile-pill" data-profile="exam">Exam Prep</button>
+          <button type="button" class="profile-pill" data-profile="dbms">DBMS</button>
+          <button type="button" class="profile-pill" data-profile="programming">Programming</button>
+          <button type="button" class="profile-pill" data-profile="study_support">Study Support</button>
+        </div>
+      </div>
 
-            <div class="kurama-chips-grid">
-              <button type="button" class="kurama-chip" data-prompt="Teach me this topic step by step using a realistic example.">Learn</button>
-              <button type="button" class="kurama-chip" data-prompt="Help me prepare this topic for my exam.">Exam Prep</button>
-              <button type="button" class="kurama-chip" data-prompt="Quiz me one question at a time.">Quiz Me</button>
-              <button type="button" class="kurama-chip" data-prompt="Give me a quick revision of this topic.">Revision</button>
-              <button type="button" class="kurama-chip" data-prompt="Help me solve and understand this programming problem.">Programming</button>
-              <button type="button" class="kurama-chip" data-prompt="Explain this in very simple English with one realistic example.">Explain Simply</button>
-            </div>
+      <!-- Chat Body -->
+      <div class="kurama-modal-body" id="kurama-chat-body">
+        <div class="kurama-empty-state" id="kurama-empty-state">
+          <div class="kurama-empty-tag">LOCAL LEARNING MODEL</div>
+          <h2 class="kurama-empty-title">What do you want to learn?</h2>
+          <p class="kurama-empty-sub">Ask a question, prepare for an exam, practise coding, revise a topic, or test your understanding.</p>
+
+          <div class="kurama-chips-grid">
+            <button type="button" class="kurama-chip" data-prompt="Teach me this topic step by step using a realistic example.">Learn</button>
+            <button type="button" class="kurama-chip" data-prompt="Help me prepare this topic for my exam.">Exam Prep</button>
+            <button type="button" class="kurama-chip" data-prompt="Quiz me one question at a time.">Quiz Me</button>
+            <button type="button" class="kurama-chip" data-prompt="Give me a quick revision of this topic.">Revision</button>
+            <button type="button" class="kurama-chip" data-prompt="Help me solve and understand this programming problem.">Programming</button>
+            <button type="button" class="kurama-chip" data-prompt="Explain this in very simple English with one realistic example.">Explain Simply</button>
           </div>
         </div>
+      </div>
 
-        <!-- Chat Input Footer -->
-        <div class="kurama-modal-footer">
-          <form class="kurama-input-form" id="kurama-chat-form">
-            <textarea id="kurama-input" class="kurama-text-input" rows="1" placeholder="Ask Jerryy's AI anything..."></textarea>
-            <button type="submit" class="btn-send-prompt" aria-label="Send prompt">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-            </button>
-          </form>
-        </div>
+      <!-- Chat Input Footer -->
+      <div class="kurama-modal-footer">
+        <form class="kurama-input-form" id="kurama-chat-form">
+          <textarea id="kurama-input" class="kurama-text-input" rows="1" placeholder="Ask Jerryy's AI anything..."></textarea>
+          <button type="submit" class="btn-send-prompt" aria-label="Send prompt">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </form>
       </div>
     </div>
   </div>
@@ -2165,16 +2173,32 @@
 
         viewCanvas.classList.remove('hidden-view');
         viewCanvas.classList.add('active-view');
-        window.location.hash = '';
+        if (window.location.hash) {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
       }
     }
 
-    btnGetStarted.addEventListener('click', () => switchView('loopstack'));
-    btnBackToCanvas.addEventListener('click', () => switchView('canvas'));
+    if (btnBackToCanvas) {
+      btnBackToCanvas.addEventListener('click', () => switchView('canvas'));
+    }
 
     // Handle back/forward browser history
-    window.addEventListener('popstate', () => {
-      if (window.location.hash === '#loopstack' || window.location.hash === '#chat') {
+    window.addEventListener('popstate', (e) => {
+      const params = new URLSearchParams(window.location.search);
+      const isChatUrl = params.get('chat') === 'open' || params.get('chat') === 'true' || (e.state && e.state.chat);
+      if (isChatUrl) {
+        if (currentUser) {
+          openKuramaModal(false);
+        } else {
+          closeKuramaModal(false);
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+      } else {
+        closeKuramaModal(false);
+      }
+
+      if (window.location.hash === '#loopstack') {
         switchView('loopstack');
       } else {
         switchView('canvas');
@@ -2182,7 +2206,7 @@
     });
 
     // Check initial hash
-    if (window.location.hash === '#loopstack' || window.location.hash === '#chat') {
+    if (window.location.hash === '#loopstack') {
       switchView('loopstack');
     }
 
@@ -2569,13 +2593,19 @@
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
       : null;
 
-    const authOverlay = document.getElementById('auth-overlay');
-    const btnGoogleLogin = document.getElementById('btn-google-login');
     const userProfileBar = document.getElementById('user-profile-bar');
     const userAvatar = document.getElementById('user-avatar');
     const userName = document.getElementById('user-name');
     const userEmail = document.getElementById('user-email');
     const btnLogout = document.getElementById('btn-logout');
+
+    const stateChecking = document.getElementById('hero-state-checking');
+    const stateLoggedOut = document.getElementById('hero-state-logged-out');
+    const stateLoggedIn = document.getElementById('hero-state-logged-in');
+    const heroUserAvatar = document.getElementById('hero-user-avatar');
+    const heroUserFirstname = document.getElementById('hero-user-firstname');
+    const btnHeroGoogleLogin = document.getElementById('btn-hero-google-login');
+    const btnHeroLogout = document.getElementById('btn-hero-logout');
 
     let currentUser = null;
     let currentConversationId = null;
@@ -2677,22 +2707,63 @@
       }
     }
 
+    function extractUserData(user) {
+      if (!user) return { firstName: '', fullName: '', email: '', avatarUrl: '' };
+      const meta = user.user_metadata || {};
+      const email = user.email || '';
+
+      let fullName = meta.full_name || meta.name || '';
+      if (!fullName && email) {
+        fullName = email.split('@')[0];
+      }
+      if (!fullName) fullName = 'User';
+
+      let firstName = meta.given_name || meta.first_name || '';
+      if (!firstName && fullName) {
+        firstName = fullName.trim().split(' ')[0];
+      }
+      if (!firstName && email) {
+        const local = email.split('@')[0];
+        firstName = local.charAt(0).toUpperCase() + local.slice(1);
+      }
+      if (!firstName) firstName = 'Learner';
+
+      const avatarUrl = meta.avatar_url || meta.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName)}&background=2F69FF&color=fff`;
+
+      return { firstName, fullName, email, avatarUrl };
+    }
+
     function renderAuthState(user) {
       currentUser = user;
+
+      if (user === undefined) {
+        // STATE 1: CHECKING SESSION
+        if (stateChecking) stateChecking.style.display = 'flex';
+        if (stateLoggedOut) stateLoggedOut.style.display = 'none';
+        if (stateLoggedIn) stateLoggedIn.style.display = 'none';
+        return;
+      }
+
       if (user) {
-        // Logged In: Hide login screen and display Jerryy's AI chat interface
-        if (authOverlay) authOverlay.classList.add('auth-hidden');
+        // STATE 3: USER LOGGED IN
+        const userData = extractUserData(user);
 
-        const meta = user.user_metadata || {};
-        const displayName = meta.full_name || meta.name || user.email?.split('@')[0] || 'Jerryy Student';
-        const emailAddr = user.email || '';
-        const photoUrl = meta.avatar_url || meta.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=2F69FF&color=fff`;
+        if (stateChecking) stateChecking.style.display = 'none';
+        if (stateLoggedOut) stateLoggedOut.style.display = 'none';
+        if (stateLoggedIn) stateLoggedIn.style.display = 'flex';
 
-        if (userName) userName.textContent = displayName;
-        if (userEmail) userEmail.textContent = emailAddr;
+        if (heroUserFirstname) heroUserFirstname.textContent = userData.firstName;
+        if (heroUserAvatar) {
+          heroUserAvatar.src = userData.avatarUrl;
+          heroUserAvatar.alt = userData.fullName;
+        }
+
+        // Modal profile bar
+        if (userName) userName.textContent = userData.fullName;
+        if (userEmail) userEmail.textContent = userData.email;
         if (userAvatar) {
-          userAvatar.src = photoUrl;
-          userAvatar.alt = displayName;
+          userAvatar.src = userData.avatarUrl;
+          userAvatar.alt = userData.fullName;
         }
         if (userProfileBar) userProfileBar.style.display = 'flex';
 
@@ -2701,84 +2772,148 @@
           if (!loaded) restoreChatHistory();
         });
 
-        // Show chat interface
-        if (kuramaModal) {
-          kuramaModal.classList.add('open');
-          if (kuramaInput) setTimeout(() => kuramaInput.focus(), 100);
+        // Check if URL indicates chat should be opened immediately
+        const urlParams = new URLSearchParams(window.location.search);
+        const isChatPath = window.location.pathname.endsWith('chat.html');
+        if (urlParams.get('chat') === 'open' || urlParams.get('chat') === 'true' || isChatPath) {
+          openKuramaModal(false);
         }
       } else {
-        // Logged Out: Show login screen with background animation visible
+        // STATE 2: USER NOT LOGGED IN
         currentConversationId = null;
         chatHistory = [];
-        if (authOverlay) authOverlay.classList.remove('auth-hidden');
+
+        if (stateChecking) stateChecking.style.display = 'none';
+        if (stateLoggedOut) stateLoggedOut.style.display = 'flex';
+        if (stateLoggedIn) stateLoggedIn.style.display = 'none';
+
+        if (heroUserFirstname) heroUserFirstname.textContent = '';
+        if (heroUserAvatar) heroUserAvatar.src = '';
+        if (userName) userName.textContent = '';
+        if (userEmail) userEmail.textContent = '';
+        if (userAvatar) userAvatar.src = '';
         if (userProfileBar) userProfileBar.style.display = 'none';
 
-        // Close chat modal
-        if (kuramaModal) {
-          kuramaModal.classList.remove('open');
+        // Close chat modal if open
+        closeKuramaModal(false);
+
+        // AUTH PROTECTION: If logged out and URL has ?chat=open or is chat.html
+        if (window.location.search.includes('chat=open') || window.location.search.includes('chat=true')) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+        if (window.location.pathname.endsWith('chat.html')) {
+          window.location.replace('/');
         }
       }
     }
 
-    if (btnGoogleLogin && supabase) {
-      btnGoogleLogin.addEventListener('click', async () => {
-        try {
-          const { error } = await supabase.auth.signInWithOAuth({
-            provider: "google",
-            options: {
-              redirectTo: window.location.origin
-            }
-          });
-          if (error) {
-            console.error('Google OAuth error:', error);
-            showToast('Login error: ' + error.message);
-          }
-        } catch (err) {
-          console.error('Google sign-in error:', err);
-          showToast('Could not open Google login.');
-        }
-      });
-    }
-
-    if (btnLogout && supabase) {
-      btnLogout.addEventListener('click', async () => {
-        try {
-          const { error } = await supabase.auth.signOut();
-          if (error) console.error('Sign-out error:', error);
-          renderAuthState(null);
-          showToast('Logged out');
-        } catch (err) {
-          console.error('Logout error:', err);
-          renderAuthState(null);
-        }
-      });
-    }
-
-    function openKuramaModal() {
-      if (!currentUser) {
-        if (authOverlay) authOverlay.classList.remove('auth-hidden');
+    async function handleGoogleLogin() {
+      if (!supabase) {
+        showToast('Supabase client not initialized');
         return;
       }
-      kuramaModal.classList.add('open');
-      setTimeout(() => kuramaInput.focus(), 100);
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: window.location.origin
+          }
+        });
+        if (error) {
+          console.error('Google OAuth error:', error);
+          showToast('Login error: ' + error.message);
+        }
+      } catch (err) {
+        console.error('Google sign-in error:', err);
+        showToast('Could not open Google login.');
+      }
     }
 
-    function closeKuramaModal() {
-      kuramaModal.classList.remove('open');
+    if (btnHeroGoogleLogin) btnHeroGoogleLogin.addEventListener('click', handleGoogleLogin);
+
+    async function handleLogout() {
+      try {
+        if (supabase) {
+          await supabase.auth.signOut();
+        }
+      } catch (err) {
+        console.error('Logout error:', err);
+      } finally {
+        renderAuthState(null);
+        showToast('Signed out');
+      }
     }
 
-    if (btnOpenKurama1) btnOpenKurama1.addEventListener('click', openKuramaModal);
-    if (btnOpenKurama2) btnOpenKurama2.addEventListener('click', openKuramaModal);
-    if (btnCloseKurama) btnCloseKurama.addEventListener('click', closeKuramaModal);
+    if (btnHeroLogout) btnHeroLogout.addEventListener('click', handleLogout);
+    if (btnLogout) btnLogout.addEventListener('click', handleLogout);
+
+    function openKuramaModal(updateUrl = true) {
+      if (!currentUser) {
+        renderAuthState(null);
+        return;
+      }
+      if (kuramaModal) {
+        kuramaModal.classList.add('open');
+        if (kuramaInput) setTimeout(() => kuramaInput.focus(), 150);
+      }
+      if (updateUrl) {
+        const url = new URL(window.location);
+        url.searchParams.set('chat', 'open');
+        window.history.pushState({ chat: true }, '', url.pathname + url.search);
+      }
+    }
+
+    function closeKuramaModal(updateUrl = true) {
+      if (kuramaModal) {
+        kuramaModal.classList.remove('open');
+      }
+      if (window.location.pathname.endsWith('chat.html')) {
+        window.location.href = '/';
+        return;
+      }
+      if (updateUrl) {
+        const url = new URL(window.location);
+        url.searchParams.delete('chat');
+        window.history.pushState({ chat: false }, '', url.pathname + (url.search ? url.search : ''));
+      }
+    }
+
+    if (btnGetStarted) {
+      btnGetStarted.addEventListener('click', (e) => {
+        e.preventDefault();
+        openKuramaModal(true);
+      });
+    }
+
+    if (btnOpenKurama1) btnOpenKurama1.addEventListener('click', () => openKuramaModal(true));
+    if (btnOpenKurama2) btnOpenKurama2.addEventListener('click', () => openKuramaModal(true));
+    if (btnCloseKurama) btnCloseKurama.addEventListener('click', () => closeKuramaModal(true));
 
     if (kuramaModal) {
       kuramaModal.addEventListener('click', (e) => {
-        if (e.target === kuramaModal) closeKuramaModal();
+        if (e.target === kuramaModal) closeKuramaModal(true);
       });
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && kuramaModal && kuramaModal.classList.contains('open')) {
+        closeKuramaModal(true);
+      }
+    });
+
+    // Auto-open chat if ?chat=open or ?chat=true is in URL on load
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('chat') === 'open' || urlParams.get('chat') === 'true') {
+      setTimeout(() => {
+        if (currentUser) openKuramaModal(false);
+      }, 200);
     }
 
     // Initialize Supabase Auth listeners and session restoration
     if (supabase) {
+      // STATE 1: Start checking session
+      renderAuthState(undefined);
+
       supabase.auth.onAuthStateChange((event, session) => {
         if (session && session.user) {
           renderAuthState(session.user);
@@ -2800,9 +2935,11 @@
           }, 150);
         }
       }).catch(err => {
-        console.warn('Session restoration failed:', err);
+        console.warn('Session check failed:', err);
         renderAuthState(null);
       });
+    } else {
+      renderAuthState(null);
     }
 
     // Profile selector handling
