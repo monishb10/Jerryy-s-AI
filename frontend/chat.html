@@ -3784,10 +3784,27 @@
     // Background Non-Blocking Memory Extraction
     async function triggerBackgroundMemoryExtraction(promptText) {
       if (!currentUser || !currentUser.id || !promptText) return;
+
+      // 1. Check if the prompt has any personal self-referential cues
+      const hasPersonalCues = /\b(i am|i'm|my|i live|i study|i work|i like|i love|i prefer|i have|call me|remember that|forget)\b/i.test(promptText);
+      if (!hasPersonalCues) {
+        console.log('[PERF] memory extraction Ollama call: 0 ms (skipped: no personal memory cues)');
+        return;
+      }
+
+      // 2. Check if already extracted deterministically in 0ms
+      const deterministic = extractInstantMemories(promptText);
+      const forget = checkInstantForget(promptText);
+      if (deterministic.length > 0 || forget) {
+        console.log('[PERF] memory extraction Ollama call: 0 ms (handled deterministically without Ollama)');
+        return;
+      }
+
       try {
         const session = await getAuthenticatedSession();
         if (!session || !session.access_token) return;
 
+        const tExtractStart = performance.now();
         const res = await fetch('/api/extract-memories', {
           method: 'POST',
           headers: {
@@ -3796,6 +3813,9 @@
           },
           body: JSON.stringify({ message: promptText })
         });
+        const extractDuration = (performance.now() - tExtractStart).toFixed(2);
+        console.log(`[PERF] memory extraction Ollama call: ${extractDuration} ms`);
+
         if (!res.ok) return;
         const data = await res.json();
 
@@ -3957,11 +3977,12 @@
 
       const backfillFlagKey = `jerryys_ai_backfill_completed_${user.id}`;
       if (!force && localStorage.getItem(backfillFlagKey) === 'true') {
+        console.log('[PERF] backfill: skipped (already completed)');
         return;
       }
 
       isBackfillingMemories = true;
-      console.log(`[MEMORY] Checking historical chat messages for user backfill: ${user.id} (force=${force})`);
+      console.log(`[PERF] Checking historical chat messages for one-time user backfill: ${user.id} (force=${force})`);
 
       try {
         let candidateUserMsgs = [];
@@ -4012,7 +4033,7 @@
           return;
         }
 
-        // 4. Instant heuristic extraction across all past user messages
+        // 4. Instant heuristic extraction across all past user messages (0ms, no LLM required)
         for (const msg of uniqueUserMsgs) {
           const detected = extractInstantMemories(msg);
           for (const item of detected) {
@@ -4020,32 +4041,34 @@
           }
         }
 
-        // 5. Batch Ollama AI backfill for nuanced/complex facts
-        try {
-          const session = await getAuthenticatedSession();
-          if (session && session.access_token) {
-            const res = await fetch('/api/backfill-memories', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session.access_token}`
-              },
-              body: JSON.stringify({ messages: uniqueUserMsgs.slice(-40) })
-            });
+        // 5. Batch Ollama AI backfill for nuanced/complex facts (ONLY when explicitly forced via "Re-scan Past Chats")
+        if (force) {
+          try {
+            const session = await getAuthenticatedSession();
+            if (session && session.access_token) {
+              const res = await fetch('/api/backfill-memories', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify({ messages: uniqueUserMsgs.slice(-40) })
+              });
 
-            if (res.ok) {
-              const data = await res.json();
-              if (data.memories && Array.isArray(data.memories)) {
-                for (const mem of data.memories) {
-                  if (mem.key && mem.value) {
-                    await saveUserMemory(user.id, mem.key, mem.value, mem.category || 'general');
+              if (res.ok) {
+                const data = await res.json();
+                if (data.memories && Array.isArray(data.memories)) {
+                  for (const mem of data.memories) {
+                    if (mem.key && mem.value) {
+                      await saveUserMemory(user.id, mem.key, mem.value, mem.category || 'general');
+                    }
                   }
                 }
               }
             }
+          } catch (apiErr) {
+            console.warn('[BACKFILL] Backend batch API call skipped:', apiErr);
           }
-        } catch (apiErr) {
-          console.warn('[BACKFILL] Backend batch API call skipped:', apiErr);
         }
 
         // 6. Mark backfill as completed
@@ -4063,6 +4086,7 @@
         isBackfillingMemories = false;
       }
     }
+
 
     // =========================================================
     // LOGOUT HANDLER (CLEARS ALL USER STATE & REDIRECTS)
@@ -4413,6 +4437,9 @@
       if (btnSendPrompt) btnSendPrompt.disabled = true;
       if (kuramaInput) kuramaInput.disabled = true;
 
+      const perfReqStart = performance.now();
+      console.log('[PERF] request started');
+
       try {
         if (!currentChatId) {
           await handleNewChat(false);
@@ -4420,43 +4447,48 @@
 
         if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
 
-        // 1. Render User Message ONCE
+        // 1. Render User Message ONCE (immediate UI feedback)
         renderUserMessage(cleanPrompt, true);
 
-        // 2. Auto-generate title if this is the first message
-        await updateChatTitleIfNew(currentChatId, cleanPrompt);
-
-        // 3. History to send to Ollama (last 12 prior messages)
+        // 2. History to send to Ollama (last 12 prior messages)
         const historyToSend = chatHistory.slice(-12);
 
-        // 4. Append user message to in-memory history ONCE
+        // 3. Append user message to in-memory history ONCE
         chatHistory.push({ role: 'user', content: cleanPrompt });
 
-        // 5. Save user message to database ONCE
-        await saveMessageRow('user', cleanPrompt);
-
-        // 6. Update updated_at
-        await touchChatUpdatedAt(currentChatId);
-
-        // 6.5. Process memory intents immediately (0ms):
+        // 4. Instant memory check & deterministic extraction (0ms)
+        const perfMemStart = performance.now();
         const forgetIntent = checkInstantForget(cleanPrompt);
         if (forgetIntent) {
           if (forgetIntent.all) {
-            await clearAllUserMemories(currentUser.id);
+            clearAllUserMemories(currentUser.id);
           } else {
             for (const fk of forgetIntent.keys) {
-              await deleteUserMemory(currentUser.id, fk);
+              deleteUserMemory(currentUser.id, fk);
             }
           }
         } else {
-          // Extract high-confidence personal facts immediately
           const instantMems = extractInstantMemories(cleanPrompt);
           for (const im of instantMems) {
-            await saveUserMemory(currentUser.id, im.key, im.value, im.category);
+            saveUserMemory(currentUser.id, im.key, im.value, im.category);
           }
         }
+        const perfMemDuration = (performance.now() - perfMemStart).toFixed(2);
+        console.log(`[PERF] memory database load: ${perfMemDuration} ms`);
 
-        // 7. Get current authenticated Supabase session
+        // 5. Asynchronous background database writes for user message (non-blocking)
+        const perfDbUserStart = performance.now();
+        const userDbPromise = (async () => {
+          try {
+            await updateChatTitleIfNew(currentChatId, cleanPrompt);
+            await saveMessageRow('user', cleanPrompt);
+            await touchChatUpdatedAt(currentChatId);
+          } catch (dbErr) {
+            console.warn('[DB] User message save background error:', dbErr);
+          }
+        })();
+
+        // 6. Get current authenticated Supabase session
         let session = await getAuthenticatedSession();
         if (!session || !session.access_token) {
           showToast("Your session has expired. Please sign in again.");
@@ -4467,15 +4499,16 @@
           return;
         }
 
-        // Show thinking indicator
+        // Show thinking indicator immediately
         showThinking();
 
-        // 8. Query /api/chat with authenticated Bearer token and injected account memory
+        // 7. Query /api/chat with authenticated Bearer token and injected account memory
         let chatHeaders = {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         };
 
+        const perfOllamaStart = performance.now();
         let res = await fetch('/api/chat', {
           method: 'POST',
           headers: chatHeaders,
@@ -4485,6 +4518,8 @@
             memories: userMemories
           })
         });
+        const perfOllamaDuration = (performance.now() - perfOllamaStart).toFixed(2);
+        console.log(`[PERF] main Ollama generation: ${perfOllamaDuration} ms`);
 
         // Handle 401 Unauthorized: attempt refresh then redirect if invalid
         if (res.status === 401) {
@@ -4529,19 +4564,23 @@
           const data = await res.json();
           const reply = data.reply || '';
 
-          // 9. Append assistant reply to in-memory history ONCE
+          // Render assistant reply IMMEDIATELY with zero delay
           chatHistory.push({ role: 'assistant', content: reply });
-
-          // 10. Save assistant reply to database ONCE
-          await saveMessageRow('assistant', reply);
-
-          // 11. Render assistant reply ONCE
           renderAssistantMessage(reply, true);
 
-          // 12. Update updated_at
+          // Asynchronously finalize database writes in background
+          const perfAssistantDbStart = performance.now();
+          await userDbPromise;
+          await saveMessageRow('assistant', reply);
           await touchChatUpdatedAt(currentChatId);
+          const totalDbDuration = ((performance.now() - perfAssistantDbStart) + (perfOllamaStart - perfDbUserStart)).toFixed(2);
+          console.log(`[PERF] database writes: ${totalDbDuration} ms`);
 
-          // 13. Trigger asynchronous background memory extraction (NON-BLOCKING)
+          const perfTotalDuration = (performance.now() - perfReqStart).toFixed(2);
+          console.log(`[PERF] total request: ${perfTotalDuration} ms`);
+          console.log('[PERF] Ollama calls count for this request: 1');
+
+          // Trigger asynchronous background memory extraction (NON-BLOCKING & SMART-SKIPPED)
           triggerBackgroundMemoryExtraction(cleanPrompt);
         } else {
           let errDetail = '';
@@ -4579,6 +4618,7 @@
         }
       }
     }
+
 
     // Health check on load
     async function checkOllamaHealth() {

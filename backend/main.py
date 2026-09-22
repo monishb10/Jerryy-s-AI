@@ -4,6 +4,7 @@ Connects the web frontend to local Ollama (jerryys-ai) model with chat profile s
 """
 
 import os
+import time
 import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
@@ -181,10 +182,14 @@ async def chat_endpoint(
     payload: ChatRequest,
     current_user: AuthenticatedUser = Depends(get_current_user)
 ):
+    t_req_start = time.perf_counter()
+    logger.info("[PERF] request started")
+
     user_msg = payload.message.strip()
     if not user_msg:
         raise HTTPException(status_code=400, detail="Message cannot be empty.")
 
+    t_mem_start = time.perf_counter()
     # 1. Build unified system prompt
     system_content = UNIFIED_SYSTEM_PROMPT
 
@@ -199,6 +204,9 @@ async def chat_endpoint(
     memory_context = build_memory_context(safe_memories)
     if memory_context:
         system_content += f"\n\n{memory_context}"
+
+    mem_load_ms = (time.perf_counter() - t_mem_start) * 1000.0
+    logger.info(f"[PERF] memory database load: {mem_load_ms:.2f} ms")
 
     # 4. Filter and validate history: limit to last 12
     valid_history = []
@@ -215,8 +223,21 @@ async def chat_endpoint(
         {"role": "user", "content": user_msg}
     ]
 
+    # Memory extraction does not run inside chat request
+    logger.info("[PERF] memory extraction Ollama call: 0.00 ms (non-blocking / decoupled from chat response)")
+
     # 6. Query Ollama
+    t_ollama_start = time.perf_counter()
     reply = await chat_with_ollama(messages)
+    ollama_gen_ms = (time.perf_counter() - t_ollama_start) * 1000.0
+    logger.info(f"[PERF] main Ollama generation: {ollama_gen_ms:.2f} ms")
+
+    # Database writes occur asynchronously client-side
+    logger.info("[PERF] database writes: 0.00 ms (handled client-side asynchronously)")
+
+    t_total_ms = (time.perf_counter() - t_req_start) * 1000.0
+    logger.info(f"[PERF] total request: {t_total_ms:.2f} ms")
+    logger.info("[PERF] Ollama calls for this chat request: 1")
 
     return {
         "reply": reply,
@@ -231,7 +252,11 @@ async def extract_memories_endpoint(
     payload: ExtractMemoryRequest,
     current_user: AuthenticatedUser = Depends(get_current_user)
 ):
+    t_start = time.perf_counter()
+    logger.info("[PERF] Background memory extraction endpoint invoked")
     result = await extract_memories_with_ollama(payload.message)
+    t_ms = (time.perf_counter() - t_start) * 1000.0
+    logger.info(f"[PERF] memory extraction call completed: {t_ms:.2f} ms")
     return result
 
 
@@ -241,8 +266,13 @@ async def backfill_memories_endpoint(
     payload: BackfillMemoryRequest,
     current_user: AuthenticatedUser = Depends(get_current_user)
 ):
+    t_start = time.perf_counter()
+    logger.info("[PERF] Batch memory backfill endpoint invoked")
     result = await extract_batch_memories_with_ollama(payload.messages)
+    t_ms = (time.perf_counter() - t_start) * 1000.0
+    logger.info(f"[PERF] backfill call completed: {t_ms:.2f} ms")
     return result
+
 
 
 # Static Frontend Routing

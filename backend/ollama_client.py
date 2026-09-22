@@ -4,7 +4,10 @@ Handles asynchronous communication with local Ollama instance.
 """
 
 import os
+import time
 import logging
+import re
+import json
 from typing import List, Dict, Any, Optional
 import httpx
 try:
@@ -19,6 +22,15 @@ OLLAMA_URL = os.getenv("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "jerryys-ai")
 TIMEOUT_SECONDS = float(os.getenv("OLLAMA_TIMEOUT", "600.0"))
 OLLAMA_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "30m")
+
+_OLLAMA_CALL_COUNT = 0
+
+def get_ollama_call_count() -> int:
+    return _OLLAMA_CALL_COUNT
+
+def reset_ollama_call_count():
+    global _OLLAMA_CALL_COUNT
+    _OLLAMA_CALL_COUNT = 0
 
 
 class OllamaConnectionError(Exception):
@@ -77,8 +89,16 @@ async def chat_with_ollama(messages: List[Dict[str, str]]) -> str:
     - model: jerryys-ai
     - stream: false
     - think: false (never expose internal reasoning)
+    - keep_alive: 30m
     - timeout: 180s (local CPU execution)
     """
+    global _OLLAMA_CALL_COUNT
+    _OLLAMA_CALL_COUNT += 1
+    call_num = _OLLAMA_CALL_COUNT
+
+    t_start = time.perf_counter()
+    logger.info(f"[PERF] Ollama call #{call_num} started: main chat")
+
     payload = {
         "model": OLLAMA_MODEL,
         "messages": messages,
@@ -107,6 +127,9 @@ async def chat_with_ollama(messages: List[Dict[str, str]]) -> str:
         raise OllamaConnectionError(
             f"Error communicating with local Ollama: {e}"
         ) from e
+
+    t_elapsed = (time.perf_counter() - t_start) * 1000.0
+    logger.info(f"[PERF] Ollama call #{call_num} completed in {t_elapsed:.2f} ms")
 
     if response.status_code == 404:
         logger.error(f"Model '{OLLAMA_MODEL}' not found in Ollama.")
@@ -139,19 +162,18 @@ async def chat_with_ollama(messages: List[Dict[str, str]]) -> str:
 
 async def extract_memories_with_ollama(user_message: str) -> Dict[str, Any]:
     """
-    Extracts stable, long-term personal facts from the user's latest message using local Ollama.
-    Also identifies explicit 'forget' requests (e.g., 'Forget my address').
-    Executes with low temperature (0.1) and strict JSON format.
-    Never throws unhandled exceptions; returns empty memory structure on any failure.
+    Extracts stable, long-term personal facts from the user's latest message.
+    Uses fast deterministic extraction for common patterns (name, education, location)
+    and conversational forget intents in 0ms without invoking Ollama.
+    Skips Ollama entirely if message has no personal self-referential cues.
     """
-    import json
-    import re
+    t_start = time.perf_counter()
 
     clean_msg = (user_message or "").strip()
     if not clean_msg:
         return {"memories": [], "forget_keys": []}
 
-    # 1. Fast regex detection for conversational 'forget' commands
+    # 1. Fast regex detection for conversational 'forget' commands (0ms)
     forget_patterns = [
         r"(?:please\s+)?(?:forget|don'?t\s+remember|stop\s+remembering|remove|delete)\s+(?:my\s+)?([a-zA-Z0-9_'’\s]{2,40})",
         r"(?:clear|erase)\s+(?:my\s+)?([a-zA-Z0-9_'’\s]{2,40})\s+memory"
@@ -161,7 +183,6 @@ async def extract_memories_with_ollama(user_message: str) -> Dict[str, Any]:
         match = re.search(pat, clean_msg, re.IGNORECASE)
         if match:
             raw_target = match.group(1).strip().lower()
-            # Normalize target key e.g. "girlfriend's name" -> "girlfriend_name" without stripping words ending in 's'
             clean_target = re.sub(r"['’]s\b|['’]", "", raw_target).strip()
             clean_target = re.sub(r"\s+", "_", clean_target)
             if clean_target and clean_target not in ("everything", "all", "memory"):
@@ -170,10 +191,51 @@ async def extract_memories_with_ollama(user_message: str) -> Dict[str, Any]:
                 detected_forget_keys.append("__all__")
 
     if detected_forget_keys:
-        logger.info(f"Detected conversational forget intent for keys: {detected_forget_keys}")
+        t_elapsed = (time.perf_counter() - t_start) * 1000.0
+        logger.info(f"[PERF] Conversational forget intent handled deterministically in {t_elapsed:.2f} ms: {detected_forget_keys}")
         return {"memories": [], "forget_keys": detected_forget_keys}
 
-    # 2. Extract stable personal facts with Ollama
+    # 2. Check if message contains ANY personal self-referential cues
+    has_personal_cues = bool(re.search(
+        r"\b(i am|i'm|my|i live|i study|i work|i like|i love|i prefer|i have|call me|remember that|forget)\b",
+        clean_msg,
+        re.IGNORECASE
+    ))
+    if not has_personal_cues:
+        t_elapsed = (time.perf_counter() - t_start) * 1000.0
+        logger.info(f"[PERF] Memory extraction skipped in {t_elapsed:.2f} ms: no personal memory cues detected")
+        return {"memories": [], "forget_keys": []}
+
+    # 3. Deterministic extraction for standard personal statements (0ms)
+    deterministic_memories = []
+    name_m = re.search(r"(?:my name is|my name's|call me)\s+([A-Za-z0-9_]{2,30})", clean_msg, re.IGNORECASE)
+    if name_m:
+        raw_name = name_m.group(1).strip()
+        if raw_name.lower() not in ("a", "an", "the", "not", "here", "what", "who"):
+            deterministic_memories.append({"key": "name", "value": raw_name.capitalize(), "category": "personal"})
+
+    year_m = re.search(r"(?:i study in|i'm studying in|i study|i am in|i'm in)\s+((?:first|second|third|fourth|final|1st|2nd|3rd|4th|\d+(?:st|nd|rd|th)?)\s+year)", clean_msg, re.IGNORECASE)
+    if year_m:
+        raw_yr = year_m.group(1).strip()
+        deterministic_memories.append({"key": "study_year", "value": raw_yr.capitalize(), "category": "education"})
+
+    loc_m = re.search(r"(?:i live in|i'm from|i am from|my hometown is|my address is)\s+([A-Za-z0-9\s]{2,40})", clean_msg, re.IGNORECASE)
+    if loc_m:
+        raw_loc = loc_m.group(1).strip().rstrip(".,")
+        if raw_loc.lower() not in ("here", "there", "fear", "pain"):
+            deterministic_memories.append({"key": "location", "value": raw_loc.capitalize(), "category": "location"})
+
+    if deterministic_memories:
+        t_elapsed = (time.perf_counter() - t_start) * 1000.0
+        logger.info(f"[PERF] Memory extraction handled deterministically ({len(deterministic_memories)} facts) in {t_elapsed:.2f} ms, skipping Ollama call")
+        return {"memories": deterministic_memories, "forget_keys": []}
+
+    # 4. Fallback to Ollama for complex, nuanced facts only
+    global _OLLAMA_CALL_COUNT
+    _OLLAMA_CALL_COUNT += 1
+    call_num = _OLLAMA_CALL_COUNT
+    logger.info(f"[PERF] Ollama call #{call_num} started: complex memory extraction")
+
     system_instruction = (
         "You are a memory extraction component for a personal AI assistant.\n"
         "Analyze ONLY the user's latest message.\n"
@@ -221,6 +283,9 @@ async def extract_memories_with_ollama(user_message: str) -> Dict[str, Any]:
     try:
         async with httpx.AsyncClient(timeout=25.0) as client:
             response = await client.post(url, json=payload)
+
+        t_elapsed = (time.perf_counter() - t_start) * 1000.0
+        logger.info(f"[PERF] Ollama call #{call_num} (complex memory extraction) completed in {t_elapsed:.2f} ms")
 
         if response.status_code != 200:
             logger.warning(f"Ollama memory extraction returned status {response.status_code}")
@@ -316,9 +381,19 @@ async def extract_batch_memories_with_ollama(user_messages: List[str]) -> Dict[s
 
     url = f"{OLLAMA_URL}/api/chat"
 
+    global _OLLAMA_CALL_COUNT
+    _OLLAMA_CALL_COUNT += 1
+    call_num = _OLLAMA_CALL_COUNT
+
+    t_start = time.perf_counter()
+    logger.info(f"[PERF] Ollama call #{call_num} started: batch memory backfill")
+
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(url, json=payload)
+
+        t_elapsed = (time.perf_counter() - t_start) * 1000.0
+        logger.info(f"[PERF] Ollama call #{call_num} (batch memory backfill) completed in {t_elapsed:.2f} ms")
 
         if response.status_code != 200:
             logger.warning(f"Ollama batch memory extraction returned status {response.status_code}")
