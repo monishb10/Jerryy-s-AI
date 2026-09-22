@@ -18,6 +18,7 @@ logger = logging.getLogger("jerryys_ai.ollama")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "jerryys-ai")
 TIMEOUT_SECONDS = float(os.getenv("OLLAMA_TIMEOUT", "600.0"))
+OLLAMA_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "30m")
 
 
 class OllamaConnectionError(Exception):
@@ -82,7 +83,8 @@ async def chat_with_ollama(messages: List[Dict[str, str]]) -> str:
         "model": OLLAMA_MODEL,
         "messages": messages,
         "stream": False,
-        "think": False
+        "think": False,
+        "keep_alive": OLLAMA_KEEP_ALIVE
     }
 
     url = f"{OLLAMA_URL}/api/chat"
@@ -210,7 +212,8 @@ async def extract_memories_with_ollama(user_message: str) -> Dict[str, Any]:
         "format": "json",
         "options": {
             "temperature": 0.1
-        }
+        },
+        "keep_alive": OLLAMA_KEEP_ALIVE
     }
 
     url = f"{OLLAMA_URL}/api/chat"
@@ -307,7 +310,8 @@ async def extract_batch_memories_with_ollama(user_messages: List[str]) -> Dict[s
         "format": "json",
         "options": {
             "temperature": 0.1
-        }
+        },
+        "keep_alive": OLLAMA_KEEP_ALIVE
     }
 
     url = f"{OLLAMA_URL}/api/chat"
