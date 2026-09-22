@@ -8,11 +8,13 @@ import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Request, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field, field_validator
+
+from auth import get_current_user, AuthenticatedUser
 
 from ollama_client import (
     chat_with_ollama,
@@ -175,7 +177,10 @@ async def health_check():
 
 # 2. Chat Endpoint (Unified Mode + Cross-Chat Account Memory Injection)
 @app.post("/api/chat", response_model=ChatResponse)
-async def chat_endpoint(payload: ChatRequest):
+async def chat_endpoint(
+    payload: ChatRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
     user_msg = payload.message.strip()
     if not user_msg:
         raise HTTPException(status_code=400, detail="Message cannot be empty.")
@@ -183,12 +188,19 @@ async def chat_endpoint(payload: ChatRequest):
     # 1. Build unified system prompt
     system_content = UNIFIED_SYSTEM_PROMPT
 
-    # 2. Inject account-level memory context block if available
-    memory_context = build_memory_context(payload.memories or [])
+    # 2. Filter memories strictly to current_user.id (Never trust unauthenticated user_id)
+    safe_memories = []
+    for m in (payload.memories or []):
+        m_uid = m.get("user_id")
+        if not m_uid or str(m_uid) == current_user.id:
+            safe_memories.append(m)
+
+    # 3. Inject account-level memory context block if available
+    memory_context = build_memory_context(safe_memories)
     if memory_context:
         system_content += f"\n\n{memory_context}"
 
-    # 3. Filter and validate history: limit to last 12
+    # 4. Filter and validate history: limit to last 12
     valid_history = []
     if payload.history:
         for item in payload.history[-12:]:
@@ -196,14 +208,14 @@ async def chat_endpoint(payload: ChatRequest):
             if r in ("user", "assistant"):
                 valid_history.append({"role": r, "content": item.content})
 
-    # 4. Construct Ollama message sequence
+    # 5. Construct Ollama message sequence
     messages = [
         {"role": "system", "content": system_content},
         *valid_history,
         {"role": "user", "content": user_msg}
     ]
 
-    # 5. Query Ollama
+    # 6. Query Ollama
     reply = await chat_with_ollama(messages)
 
     return {
@@ -215,14 +227,20 @@ async def chat_endpoint(payload: ChatRequest):
 
 # 3. Memory Extraction Endpoint (Runs in background, non-blocking for chat)
 @app.post("/api/extract-memories", response_model=ExtractMemoryResponse)
-async def extract_memories_endpoint(payload: ExtractMemoryRequest):
+async def extract_memories_endpoint(
+    payload: ExtractMemoryRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
     result = await extract_memories_with_ollama(payload.message)
     return result
 
 
 # 4. Batch Memory Backfill Endpoint (One-time extraction across past user messages)
 @app.post("/api/backfill-memories", response_model=BackfillMemoryResponse)
-async def backfill_memories_endpoint(payload: BackfillMemoryRequest):
+async def backfill_memories_endpoint(
+    payload: BackfillMemoryRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
     result = await extract_batch_memories_with_ollama(payload.messages)
     return result
 

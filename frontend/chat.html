@@ -3761,13 +3761,39 @@
       }
     }
 
+    // =========================================================
+    // AUTHENTICATED SUPABASE SESSION RETRIEVER
+    // =========================================================
+    async function getAuthenticatedSession() {
+      if (typeof window !== 'undefined' && window.__mockSession) {
+        return window.__mockSession;
+      }
+      if (!supabaseClient) return null;
+      try {
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error || !data || !data.session || !data.session.access_token) {
+          return null;
+        }
+        return data.session;
+      } catch (err) {
+        console.warn('[AUTH] getSession error:', err);
+        return null;
+      }
+    }
+
     // Background Non-Blocking Memory Extraction
     async function triggerBackgroundMemoryExtraction(promptText) {
       if (!currentUser || !currentUser.id || !promptText) return;
       try {
+        const session = await getAuthenticatedSession();
+        if (!session || !session.access_token) return;
+
         const res = await fetch('/api/extract-memories', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
           body: JSON.stringify({ message: promptText })
         });
         if (!res.ok) return;
@@ -3996,18 +4022,24 @@
 
         // 5. Batch Ollama AI backfill for nuanced/complex facts
         try {
-          const res = await fetch('/api/backfill-memories', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: uniqueUserMsgs.slice(-40) })
-          });
+          const session = await getAuthenticatedSession();
+          if (session && session.access_token) {
+            const res = await fetch('/api/backfill-memories', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+              },
+              body: JSON.stringify({ messages: uniqueUserMsgs.slice(-40) })
+            });
 
-          if (res.ok) {
-            const data = await res.json();
-            if (data.memories && Array.isArray(data.memories)) {
-              for (const mem of data.memories) {
-                if (mem.key && mem.value) {
-                  await saveUserMemory(user.id, mem.key, mem.value, mem.category || 'general');
+            if (res.ok) {
+              const data = await res.json();
+              if (data.memories && Array.isArray(data.memories)) {
+                for (const mem of data.memories) {
+                  if (mem.key && mem.value) {
+                    await saveUserMemory(user.id, mem.key, mem.value, mem.category || 'general');
+                  }
                 }
               }
             }
@@ -4424,19 +4456,72 @@
           }
         }
 
-        // 7. Show thinking indicator
+        // 7. Get current authenticated Supabase session
+        let session = await getAuthenticatedSession();
+        if (!session || !session.access_token) {
+          showToast("Your session has expired. Please sign in again.");
+          renderErrorMessage("Your session has expired. Please sign in again.");
+          setTimeout(() => {
+            handleAuthUserChange(null);
+          }, 1500);
+          return;
+        }
+
+        // Show thinking indicator
         showThinking();
 
-        // 8. Query /api/chat with injected account memory
-        const res = await fetch('/api/chat', {
+        // 8. Query /api/chat with authenticated Bearer token and injected account memory
+        let chatHeaders = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        };
+
+        let res = await fetch('/api/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: chatHeaders,
           body: JSON.stringify({
             message: cleanPrompt,
             history: historyToSend,
             memories: userMemories
           })
         });
+
+        // Handle 401 Unauthorized: attempt refresh then redirect if invalid
+        if (res.status === 401) {
+          console.warn('[AUTH] /api/chat returned 401 Unauthorized. Attempting session refresh...');
+          let refreshed = false;
+          if (supabaseClient && !(typeof window !== 'undefined' && window.__mockSession)) {
+            try {
+              const { data: refreshData, error: refreshErr } = await supabaseClient.auth.refreshSession();
+              if (!refreshErr && refreshData?.session?.access_token) {
+                session = refreshData.session;
+                chatHeaders['Authorization'] = `Bearer ${session.access_token}`;
+                res = await fetch('/api/chat', {
+                  method: 'POST',
+                  headers: chatHeaders,
+                  body: JSON.stringify({
+                    message: cleanPrompt,
+                    history: historyToSend,
+                    memories: userMemories
+                  })
+                });
+                if (res.ok) {
+                  refreshed = true;
+                }
+              }
+            } catch (_) {}
+          }
+
+          if (!refreshed && res.status === 401) {
+            hideThinking();
+            showToast("Your session has expired. Please sign in again.");
+            renderErrorMessage("Your session has expired. Please sign in again.");
+            setTimeout(() => {
+              handleAuthUserChange(null);
+            }, 1500);
+            return;
+          }
+        }
 
         hideThinking();
 
@@ -4464,6 +4549,15 @@
             const errJson = await res.json();
             errDetail = errJson.detail || '';
           } catch (_) {}
+
+          if (res.status === 401) {
+            showToast("Your session has expired. Please sign in again.");
+            renderErrorMessage("Your session has expired. Please sign in again.");
+            setTimeout(() => {
+              handleAuthUserChange(null);
+            }, 1500);
+            return;
+          }
 
           let userMsg = "Jerryy's AI could not connect to the local model. Make sure Ollama is running.";
           if (res.status === 404 || errDetail.includes('not available in Ollama')) {
