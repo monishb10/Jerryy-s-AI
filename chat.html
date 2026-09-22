@@ -1722,6 +1722,25 @@
       color: #ffffff;
     }
 
+    .btn-rescan-memory {
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: rgba(57, 255, 20, 0.12);
+      border: 1px solid rgba(57, 255, 20, 0.3);
+      color: #39FF14;
+      font-family: var(--font-outfit);
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-rescan-memory:hover {
+      background: rgba(57, 255, 20, 0.25);
+      border-color: #39FF14;
+      color: #ffffff;
+    }
+
     /* =========================================================
        SUPABASE AUTHENTICATION & LANDING HERO STATES
        ========================================================= */
@@ -2489,6 +2508,7 @@
       </div>
 
       <div class="memory-modal-footer">
+        <button type="button" class="btn-rescan-memory" id="btn-rescan-memory">Re-scan Past Chats</button>
         <button type="button" class="btn-clear-all-memory" id="btn-clear-all-memory">Clear All Memory</button>
       </div>
     </div>
@@ -2968,6 +2988,7 @@
     const memoryList = document.getElementById('memory-list');
     const memoryEmptyState = document.getElementById('memory-empty-state');
     const btnClearAllMemory = document.getElementById('btn-clear-all-memory');
+    const btnRescanMemory = document.getElementById('btn-rescan-memory');
 
     // Purge any legacy shared un-namespaced chat history
     try {
@@ -3621,14 +3642,17 @@
 
       let loaded = [];
 
-      // 1. Try Supabase
+      // 1. Try Supabase with 2.5s failsafe
       if (supabaseClient) {
         try {
-          const { data, error } = await supabaseClient
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500));
+          const queryPromise = supabaseClient
             .from('user_memories')
             .select('*')
             .eq('user_id', userId)
             .order('updated_at', { ascending: false });
+
+          const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
 
           if (!error && Array.isArray(data) && data.length > 0) {
             loaded = data;
@@ -3658,22 +3682,7 @@
         updated_at: new Date().toISOString()
       };
 
-      if (supabaseClient) {
-        try {
-          await supabaseClient
-            .from('user_memories')
-            .upsert({
-              user_id: userId,
-              memory_key: key,
-              memory_value: value,
-              category: category,
-              updated_at: memObj.updated_at
-            }, { onConflict: 'user_id,memory_key' });
-        } catch (err) {
-          console.warn('[MEMORY] Supabase upsert skipped:', err);
-        }
-      }
-
+      // 1. Immediate local state update (0ms, non-blocking)
       saveLocalUserMemory(userId, memObj);
 
       const existingIdx = userMemories.findIndex(m => (m.memory_key || m.key) === key);
@@ -3683,46 +3692,73 @@
         userMemories.unshift(memObj);
       }
       renderMemoryList();
+
+      // 2. Async background sync to Supabase
+      if (supabaseClient) {
+        Promise.resolve().then(async () => {
+          try {
+            await supabaseClient
+              .from('user_memories')
+              .upsert({
+                user_id: userId,
+                memory_key: key,
+                memory_value: value,
+                category: category,
+                updated_at: memObj.updated_at
+              }, { onConflict: 'user_id,memory_key' });
+          } catch (err) {
+            console.warn('[MEMORY] Supabase upsert skipped:', err);
+          }
+        });
+      }
     }
 
     async function deleteUserMemory(userId, key) {
       if (!userId || !key) return;
 
-      if (supabaseClient) {
-        try {
-          await supabaseClient
-            .from('user_memories')
-            .delete()
-            .eq('user_id', userId)
-            .eq('memory_key', key);
-        } catch (err) {
-          console.warn('[MEMORY] Supabase delete skipped:', err);
-        }
-      }
-
+      // 1. Immediate local state update (0ms)
       deleteLocalUserMemory(userId, key);
       userMemories = userMemories.filter(m => (m.memory_key || m.key) !== key);
       renderMemoryList();
+
+      // 2. Async background delete in Supabase
+      if (supabaseClient) {
+        Promise.resolve().then(async () => {
+          try {
+            await supabaseClient
+              .from('user_memories')
+              .delete()
+              .eq('user_id', userId)
+              .eq('memory_key', key);
+          } catch (err) {
+            console.warn('[MEMORY] Supabase delete skipped:', err);
+          }
+        });
+      }
     }
 
     async function clearAllUserMemories(userId) {
       if (!userId) return;
 
-      if (supabaseClient) {
-        try {
-          await supabaseClient
-            .from('user_memories')
-            .delete()
-            .eq('user_id', userId);
-        } catch (err) {
-          console.warn('[MEMORY] Supabase clear skipped:', err);
-        }
-      }
-
+      // 1. Immediate local wipe (0ms)
       clearLocalUserMemories(userId);
       userMemories = [];
       renderMemoryList();
       showToast('All memories cleared');
+
+      // 2. Async background wipe in Supabase
+      if (supabaseClient) {
+        Promise.resolve().then(async () => {
+          try {
+            await supabaseClient
+              .from('user_memories')
+              .delete()
+              .eq('user_id', userId);
+          } catch (err) {
+            console.warn('[MEMORY] Supabase clear skipped:', err);
+          }
+        });
+      }
     }
 
     // Background Non-Blocking Memory Extraction
@@ -3760,6 +3796,239 @@
         }
       } catch (err) {
         console.warn('[MEMORY] Background extraction skipped:', err);
+      }
+    }
+
+    // =========================================================
+    // INSTANT MEMORY EXTRACTION & CONVERSATIONAL FORGET HEURISTICS
+    // =========================================================
+    function extractInstantMemories(text) {
+      if (!text || typeof text !== 'string') return [];
+      const clean = text.trim();
+      const memories = [];
+
+      // 1. Preferred Name
+      const nameMatch = clean.match(/(?:my name is|my name's|call me)\s+([A-Za-z0-9_]{2,30})/i);
+      if (nameMatch) {
+        const rawName = nameMatch[1].trim();
+        const lower = rawName.toLowerCase();
+        if (!['a', 'an', 'the', 'not', 'here', 'what', 'who'].includes(lower)) {
+          memories.push({
+            key: 'name',
+            value: rawName.charAt(0).toUpperCase() + rawName.slice(1),
+            category: 'personal'
+          });
+        }
+      }
+
+      // 2. Study Year / Class / Education
+      const yearMatch = clean.match(/(?:i study in|i'm studying in|i study|i am in|i'm in)\s+((?:first|second|third|fourth|final|1st|2nd|3rd|4th|\d+(?:st|nd|rd|th)?)\s+year)/i);
+      if (yearMatch) {
+        const rawYear = yearMatch[1].trim();
+        const formattedYear = rawYear.charAt(0).toUpperCase() + rawYear.slice(1);
+        memories.push({
+          key: 'study_year',
+          value: formattedYear,
+          category: 'education'
+        });
+      }
+
+      // 3. College / Institution
+      const collegeMatch = clean.match(/(?:my college is|i study at|i attend)\s+([A-Za-z0-9\s.,]{3,50})/i);
+      if (collegeMatch) {
+        const rawCollege = collegeMatch[1].trim().replace(/[.,]$/, '');
+        if (rawCollege.length >= 3 && !['home', 'school', 'night'].includes(rawCollege.toLowerCase())) {
+          memories.push({
+            key: 'college',
+            value: rawCollege,
+            category: 'education'
+          });
+        }
+      }
+
+      // 4. Major / Branch / Course
+      const branchMatch = clean.match(/(?:my branch is|my major is|my course is)\s+([A-Za-z0-9\s.,]{2,40})/i);
+      if (branchMatch) {
+        const rawBranch = branchMatch[1].trim().replace(/[.,]$/, '');
+        memories.push({
+          key: 'branch',
+          value: rawBranch,
+          category: 'education'
+        });
+      }
+
+      // 5. Address / Location
+      const addrMatch = clean.match(/(?:my address is)\s+([^.!?\n]{3,80})/i);
+      if (addrMatch) {
+        memories.push({
+          key: 'address',
+          value: addrMatch[1].trim(),
+          category: 'location'
+        });
+      }
+      const locMatch = clean.match(/(?:i live in|i'm from|i am from|my hometown is)\s+([A-Za-z\s]{2,40})/i);
+      if (locMatch) {
+        const rawLoc = locMatch[1].trim().replace(/[.,]$/, '');
+        if (!['here', 'there', 'fear', 'pain'].includes(rawLoc.toLowerCase())) {
+          memories.push({
+            key: 'location',
+            value: rawLoc.charAt(0).toUpperCase() + rawLoc.slice(1),
+            category: 'location'
+          });
+        }
+      }
+
+      // 6. Girlfriend / Partner / Family
+      const gfMatch = clean.match(/(?:my girlfriend(?:'s name)? is)\s+([A-Za-z0-9_\s]{2,30})/i);
+      if (gfMatch) {
+        const rawGf = gfMatch[1].trim().replace(/[.,]$/, '');
+        memories.push({
+          key: 'girlfriend_name',
+          value: rawGf.charAt(0).toUpperCase() + rawGf.slice(1),
+          category: 'personal'
+        });
+      }
+
+      // 7. Favorite Programming Language
+      const langMatch = clean.match(/(?:my favorite (?:programming )?language is)\s+([A-Za-z0-9#+]+)/i);
+      if (langMatch) {
+        memories.push({
+          key: 'favorite_language',
+          value: langMatch[1].trim(),
+          category: 'skills'
+        });
+      }
+
+      return memories;
+    }
+
+    function checkInstantForget(text) {
+      if (!text || typeof text !== 'string') return null;
+      const clean = text.trim();
+
+      if (/^(?:please\s+)?(?:forget|clear|erase|delete)\s+(?:everything|all|all\s+memories)(?:\s+about\s+me)?/i.test(clean)) {
+        return { all: true, keys: [] };
+      }
+
+      const forgetMatch = clean.match(/(?:please\s+)?(?:forget|don'?t\s+remember|stop\s+remembering|remove|delete|clear|erase)\s+(?:my\s+)?([a-zA-Z0-9_'’\s]{2,40})/i);
+      if (forgetMatch) {
+        let rawTarget = forgetMatch[1].trim().toLowerCase();
+        rawTarget = rawTarget.replace(/['’]s\b|['’]/g, '').replace(/\s+/g, '_');
+        if (rawTarget && !['it', 'this', 'that'].includes(rawTarget)) {
+          return { all: false, keys: [rawTarget] };
+        }
+      }
+      return null;
+    }
+
+    // =========================================================
+    // SAFE ONE-TIME USER MEMORY BACKFILL ACROSS HISTORICAL CHATS
+    // =========================================================
+    let isBackfillingMemories = false;
+
+    async function runUserMemoryBackfill(user, force = false) {
+      if (!user || !user.id || isBackfillingMemories) return;
+
+      const backfillFlagKey = `jerryys_ai_backfill_completed_${user.id}`;
+      if (!force && localStorage.getItem(backfillFlagKey) === 'true') {
+        return;
+      }
+
+      isBackfillingMemories = true;
+      console.log(`[MEMORY] Checking historical chat messages for user backfill: ${user.id} (force=${force})`);
+
+      try {
+        let candidateUserMsgs = [];
+
+        // 1. Fetch historical user messages from Supabase (Strictly role === 'user' & user_id === user.id)
+        if (supabaseClient) {
+          try {
+            const { data, error } = await supabaseClient
+              .from('messages')
+              .select('content, role, created_at')
+              .eq('user_id', user.id)
+              .eq('role', 'user')
+              .order('created_at', { ascending: true })
+              .limit(80);
+
+            if (!error && Array.isArray(data)) {
+              data.forEach(m => {
+                if (m.content && typeof m.content === 'string') {
+                  candidateUserMsgs.push(m.content.trim());
+                }
+              });
+            }
+          } catch (err) {
+            console.warn('[BACKFILL] Supabase messages query skipped:', err);
+          }
+        }
+
+        // 2. Fetch historical user messages from local storage (Strictly role === 'user' for this user's chats)
+        const userChatsList = getLocalUserChats(user.id);
+        if (Array.isArray(userChatsList)) {
+          userChatsList.forEach(chat => {
+            const localMsgs = getLocalChatMessages(user.id, chat.id);
+            if (Array.isArray(localMsgs)) {
+              localMsgs.forEach(m => {
+                if (m.role === 'user' && m.content && typeof m.content === 'string') {
+                  candidateUserMsgs.push(m.content.trim());
+                }
+              });
+            }
+          });
+        }
+
+        // 3. Deduplicate messages
+        const uniqueUserMsgs = Array.from(new Set(candidateUserMsgs));
+
+        if (uniqueUserMsgs.length === 0) {
+          localStorage.setItem(backfillFlagKey, 'true');
+          return;
+        }
+
+        // 4. Instant heuristic extraction across all past user messages
+        for (const msg of uniqueUserMsgs) {
+          const detected = extractInstantMemories(msg);
+          for (const item of detected) {
+            await saveUserMemory(user.id, item.key, item.value, item.category);
+          }
+        }
+
+        // 5. Batch Ollama AI backfill for nuanced/complex facts
+        try {
+          const res = await fetch('/api/backfill-memories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: uniqueUserMsgs.slice(-40) })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data.memories && Array.isArray(data.memories)) {
+              for (const mem of data.memories) {
+                if (mem.key && mem.value) {
+                  await saveUserMemory(user.id, mem.key, mem.value, mem.category || 'general');
+                }
+              }
+            }
+          }
+        } catch (apiErr) {
+          console.warn('[BACKFILL] Backend batch API call skipped:', apiErr);
+        }
+
+        // 6. Mark backfill as completed
+        localStorage.setItem(backfillFlagKey, 'true');
+
+        // 7. Reload memories and refresh UI
+        await loadUserMemories(user.id);
+
+        if (force) {
+          showToast('Memory backfill completed');
+        }
+      } catch (err) {
+        console.error('[BACKFILL] Error during memory backfill:', err);
+      } finally {
+        isBackfillingMemories = false;
       }
     }
 
@@ -3848,6 +4117,9 @@
         loadUserChatList(user),
         loadUserMemories(user.id)
       ]);
+
+      // Safe one-time backfill of historical messages (runs non-blocking)
+      runUserMemoryBackfill(user);
     }
 
     // Auth guard with 8s failsafe timeout
@@ -3956,6 +4228,18 @@
         if (confirm("Are you sure you want Jerryy's AI to clear all memories for your account? Your chat history will not be deleted.")) {
           await clearAllUserMemories(currentUser.id);
         }
+      });
+    }
+
+    if (btnRescanMemory) {
+      btnRescanMemory.addEventListener('click', async () => {
+        if (!currentUser) return;
+        btnRescanMemory.disabled = true;
+        const origText = btnRescanMemory.textContent;
+        btnRescanMemory.textContent = 'Scanning...';
+        await runUserMemoryBackfill(currentUser, true);
+        btnRescanMemory.disabled = false;
+        btnRescanMemory.textContent = origText;
       });
     }
 
@@ -4122,6 +4406,24 @@
         // 6. Update updated_at
         await touchChatUpdatedAt(currentChatId);
 
+        // 6.5. Process memory intents immediately (0ms):
+        const forgetIntent = checkInstantForget(cleanPrompt);
+        if (forgetIntent) {
+          if (forgetIntent.all) {
+            await clearAllUserMemories(currentUser.id);
+          } else {
+            for (const fk of forgetIntent.keys) {
+              await deleteUserMemory(currentUser.id, fk);
+            }
+          }
+        } else {
+          // Extract high-confidence personal facts immediately
+          const instantMems = extractInstantMemories(cleanPrompt);
+          for (const im of instantMems) {
+            await saveUserMemory(currentUser.id, im.key, im.value, im.category);
+          }
+        }
+
         // 7. Show thinking indicator
         showThinking();
 
@@ -4222,6 +4524,8 @@
     window.openMemoryModal = openMemoryModal;
     window.closeMemoryModal = closeMemoryModal;
     window.getUserMemories = () => userMemories;
+    window.runUserMemoryBackfill = runUserMemoryBackfill;
+    window.extractInstantMemories = extractInstantMemories;
 
     function escapeHtml(str) {
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

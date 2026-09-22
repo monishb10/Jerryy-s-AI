@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field, field_validator
 from ollama_client import (
     chat_with_ollama,
     extract_memories_with_ollama,
+    extract_batch_memories_with_ollama,
     check_ollama_health,
     OllamaConnectionError,
     OllamaModelNotFoundError,
@@ -61,13 +62,20 @@ def build_memory_context(memories: List[Dict[str, Any]]) -> str:
     if not memories:
         return ""
 
-    lines = ["USER MEMORY (Account-level facts belonging only to the currently authenticated user):"]
+    dedup = {}
     for mem in memories:
         k = mem.get("key") or mem.get("memory_key")
         v = mem.get("value") or mem.get("memory_value")
         if k and v:
-            clean_k = str(k).replace("_", " ").strip().capitalize()
-            lines.append(f"- {clean_k}: {v}")
+            clean_k = str(k).replace("_", " ").strip().lower()
+            dedup[clean_k] = str(v).strip()
+
+    if not dedup:
+        return ""
+
+    lines = ["USER MEMORY (Account-level facts belonging only to the currently authenticated user):"]
+    for clean_k, v in dedup.items():
+        lines.append(f"- {clean_k.capitalize()}: {v}")
 
     lines.append("")
     lines.append("Memory Usage Instructions:")
@@ -114,6 +122,14 @@ class ExtractMemoryRequest(BaseModel):
 class ExtractMemoryResponse(BaseModel):
     memories: List[Dict[str, Any]]
     forget_keys: Optional[List[str]] = []
+
+
+class BackfillMemoryRequest(BaseModel):
+    messages: List[str] = Field(..., max_length=100, description="List of historical user messages to extract memories from")
+
+
+class BackfillMemoryResponse(BaseModel):
+    memories: List[Dict[str, Any]]
 
 
 # Exception Handlers
@@ -201,6 +217,13 @@ async def chat_endpoint(payload: ChatRequest):
 @app.post("/api/extract-memories", response_model=ExtractMemoryResponse)
 async def extract_memories_endpoint(payload: ExtractMemoryRequest):
     result = await extract_memories_with_ollama(payload.message)
+    return result
+
+
+# 4. Batch Memory Backfill Endpoint (One-time extraction across past user messages)
+@app.post("/api/backfill-memories", response_model=BackfillMemoryResponse)
+async def backfill_memories_endpoint(payload: BackfillMemoryRequest):
+    result = await extract_batch_memories_with_ollama(payload.messages)
     return result
 
 

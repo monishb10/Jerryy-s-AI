@@ -255,3 +255,99 @@ async def extract_memories_with_ollama(user_message: str) -> Dict[str, Any]:
         logger.warning(f"Memory extraction skipped or failed: {err}")
         return {"memories": [], "forget_keys": []}
 
+
+async def extract_batch_memories_with_ollama(user_messages: List[str]) -> Dict[str, Any]:
+    """
+    Extracts stable, long-term personal facts from a list of historical user messages.
+    Used for safe, one-time backfilling of existing conversations for an authenticated user.
+    """
+    import json
+    import re
+
+    clean_msgs = [m.strip() for m in user_messages if m and m.strip()]
+    if not clean_msgs:
+        return {"memories": []}
+
+    # Format historical user messages into bullet points
+    formatted_messages = "\n".join(f"- {msg}" for msg in clean_msgs[:40])
+
+    system_instruction = (
+        "You are a memory backfill extraction component for a personal learning assistant.\n"
+        "Analyze the following list of historical messages sent by ONE user across previous chats.\n"
+        "Extract stable, long-term personal facts that should be remembered, such as:\n"
+        "- user's preferred name (key: 'name')\n"
+        "- education / study year / class / course / college (key: 'education' or 'study_year')\n"
+        "- location / city / address (key: 'location' or 'address')\n"
+        "- favorite programming language / skills (key: 'favorite_language')\n"
+        "- occupation / career goals\n"
+        "- family or voluntary relationship info\n\n"
+        "If multiple messages state the same fact, keep the newest or clearest one.\n"
+        "Do NOT store questions, quiz answers, calculations, or greetings.\n\n"
+        "Return STRICT JSON only, matching this schema:\n"
+        "{\n"
+        '  "memories": [\n'
+        '    {"key": "name", "value": "Nobody", "category": "personal"},\n'
+        '    {"key": "study_year", "value": "Second year", "category": "education"}\n'
+        "  ]\n"
+        "}\n"
+        "If nothing worth remembering exists:\n"
+        '{"memories": []}'
+    )
+
+    messages = [
+        {"role": "system", "content": system_instruction},
+        {"role": "user", "content": f"Here are the user's past messages:\n{formatted_messages}"}
+    ]
+
+    payload = {
+        "model": OLLAMA_MODEL,
+        "messages": messages,
+        "stream": False,
+        "think": False,
+        "format": "json",
+        "options": {
+            "temperature": 0.1
+        }
+    }
+
+    url = f"{OLLAMA_URL}/api/chat"
+
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(url, json=payload)
+
+        if response.status_code != 200:
+            logger.warning(f"Ollama batch memory extraction returned status {response.status_code}")
+            return {"memories": []}
+
+        data = response.json()
+        raw_content = data.get("message", {}).get("content", "").strip()
+
+        parsed = json.loads(raw_content)
+        raw_memories = parsed.get("memories", [])
+        if not isinstance(raw_memories, list):
+            return {"memories": []}
+
+        valid_memories = []
+        for item in raw_memories:
+            if not isinstance(item, dict):
+                continue
+            k = str(item.get("key", "")).strip().lower()
+            v = str(item.get("value", "")).strip()
+            cat = str(item.get("category", "general")).strip().lower()
+
+            k_clean = re.sub(r"[^\w\s-]", "", k).replace("-", "_").replace(" ", "_").strip("_")
+            if k_clean and v and len(k_clean) <= 50 and len(v) <= 500:
+                valid_memories.append({
+                    "key": k_clean,
+                    "value": v,
+                    "category": cat or "general"
+                })
+
+        return {"memories": valid_memories}
+
+    except Exception as err:
+        logger.warning(f"Batch memory extraction skipped or failed: {err}")
+        return {"memories": []}
+
+
