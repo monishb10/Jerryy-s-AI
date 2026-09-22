@@ -12,13 +12,14 @@ from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, HTTPException, Request, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator
 
 from auth import get_current_user, AuthenticatedUser
 
 from ollama_client import (
     chat_with_ollama,
+    stream_chat_with_ollama,
     extract_memories_with_ollama,
     extract_batch_memories_with_ollama,
     check_ollama_health,
@@ -246,7 +247,69 @@ async def chat_endpoint(
     }
 
 
-# 3. Memory Extraction Endpoint (Runs in background, non-blocking for chat)
+# 3. Streaming Chat Endpoint (Progressive plain-text response)
+@app.post("/api/chat/stream")
+async def chat_stream_endpoint(
+    payload: ChatRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    t_req_start = time.perf_counter()
+    logger.info("[PERF] streaming request started")
+
+    user_msg = payload.message.strip()
+    if not user_msg:
+        raise HTTPException(status_code=400, detail="Message cannot be empty.")
+
+    t_mem_start = time.perf_counter()
+    # 1. Build unified system prompt
+    system_content = UNIFIED_SYSTEM_PROMPT
+
+    # 2. Filter memories strictly to current_user.id (Never trust unauthenticated user_id)
+    safe_memories = []
+    for m in (payload.memories or []):
+        m_uid = m.get("user_id")
+        if not m_uid or str(m_uid) == current_user.id:
+            safe_memories.append(m)
+
+    # 3. Inject account-level memory context block if available
+    memory_context = build_memory_context(safe_memories)
+    if memory_context:
+        system_content += f"\n\n{memory_context}"
+
+    mem_load_ms = (time.perf_counter() - t_mem_start) * 1000.0
+    logger.info(f"[PERF] memory database load: {mem_load_ms:.2f} ms")
+
+    # 4. Filter and validate history: limit to last 12
+    valid_history = []
+    if payload.history:
+        for item in payload.history[-12:]:
+            r = item.role.lower()
+            if r in ("user", "assistant"):
+                valid_history.append({"role": r, "content": item.content})
+
+    # 5. Construct Ollama message sequence
+    messages = [
+        {"role": "system", "content": system_content},
+        *valid_history,
+        {"role": "user", "content": user_msg}
+    ]
+
+    logger.info("[PERF] memory extraction Ollama call: 0.00 ms (non-blocking / decoupled from chat response)")
+
+    # 6. Stream from Ollama
+    chunk_iterator = await stream_chat_with_ollama(messages)
+
+    return StreamingResponse(
+        chunk_iterator,
+        media_type="text/plain; charset=utf-8",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no"
+        }
+    )
+
+
+# 4. Memory Extraction Endpoint (Runs in background, non-blocking for chat)
 @app.post("/api/extract-memories", response_model=ExtractMemoryResponse)
 async def extract_memories_endpoint(
     payload: ExtractMemoryRequest,

@@ -4426,8 +4426,32 @@
       }
     }
 
+    function createStreamingAssistantMessage() {
+      const row = document.createElement('div');
+      row.className = 'chat-row bot';
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble-bot';
+
+      const header = document.createElement('div');
+      header.className = 'bot-message-header';
+      header.innerHTML = `<span class="badge-dot" style="background:#39FF14; width:6px; height:6px; border-radius:50%; display:inline-block; box-shadow:0 0 8px #39FF14;"></span> Jerryy's AI`;
+
+      const replyBody = document.createElement('div');
+      replyBody.className = 'bot-reply-text';
+      replyBody.style.whiteSpace = 'pre-wrap';
+      replyBody.textContent = '';
+
+      bubble.appendChild(header);
+      bubble.appendChild(replyBody);
+      row.appendChild(bubble);
+      kuramaChatBody.appendChild(row);
+      kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+
+      return { row, bubble, replyBody };
+    }
+
     // =========================================================
-    // SAVE MESSAGE ONLY ONCE & QUERY OLLAMA
+    // SAVE MESSAGE ONLY ONCE & QUERY OLLAMA WITH STREAMING
     // =========================================================
     async function handleUserPrompt(promptText) {
       const cleanPrompt = promptText.trim();
@@ -4439,6 +4463,9 @@
 
       const perfReqStart = performance.now();
       console.log('[PERF] request started');
+
+      let assistantMsgContainer = null;
+      let accumulatedText = '';
 
       try {
         if (!currentChatId) {
@@ -4499,17 +4526,17 @@
           return;
         }
 
-        // Show thinking indicator immediately
-        showThinking();
+        // 7. Create one empty assistant message container
+        assistantMsgContainer = createStreamingAssistantMessage();
 
-        // 7. Query /api/chat with authenticated Bearer token and injected account memory
+        // 8. Start /api/chat/stream with authenticated Bearer token and injected account memory
         let chatHeaders = {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         };
 
         const perfOllamaStart = performance.now();
-        let res = await fetch('/api/chat', {
+        let res = await fetch('/api/chat/stream', {
           method: 'POST',
           headers: chatHeaders,
           body: JSON.stringify({
@@ -4518,12 +4545,10 @@
             memories: userMemories
           })
         });
-        const perfOllamaDuration = (performance.now() - perfOllamaStart).toFixed(2);
-        console.log(`[PERF] main Ollama generation: ${perfOllamaDuration} ms`);
 
         // Handle 401 Unauthorized: attempt refresh then redirect if invalid
         if (res.status === 401) {
-          console.warn('[AUTH] /api/chat returned 401 Unauthorized. Attempting session refresh...');
+          console.warn('[AUTH] /api/chat/stream returned 401 Unauthorized. Attempting session refresh...');
           let refreshed = false;
           if (supabaseClient && !(typeof window !== 'undefined' && window.__mockSession)) {
             try {
@@ -4531,7 +4556,7 @@
               if (!refreshErr && refreshData?.session?.access_token) {
                 session = refreshData.session;
                 chatHeaders['Authorization'] = `Bearer ${session.access_token}`;
-                res = await fetch('/api/chat', {
+                res = await fetch('/api/chat/stream', {
                   method: 'POST',
                   headers: chatHeaders,
                   body: JSON.stringify({
@@ -4548,7 +4573,10 @@
           }
 
           if (!refreshed && res.status === 401) {
-            hideThinking();
+            if (assistantMsgContainer) {
+              assistantMsgContainer.row.remove();
+              assistantMsgContainer = null;
+            }
             showToast("Your session has expired. Please sign in again.");
             renderErrorMessage("Your session has expired. Please sign in again.");
             setTimeout(() => {
@@ -4558,20 +4586,76 @@
           }
         }
 
-        hideThinking();
+        // Check if Ollama failed before streaming starts
+        if (!res.ok) {
+          if (assistantMsgContainer) {
+            assistantMsgContainer.row.remove();
+            assistantMsgContainer = null;
+          }
+          let errDetail = '';
+          try {
+            const errJson = await res.json();
+            errDetail = errJson.detail || '';
+          } catch (_) {}
 
-        if (res.ok) {
-          const data = await res.json();
-          const reply = data.reply || '';
+          let userMsg = "Jerryy's AI could not connect to the local model. Make sure Ollama is running.";
+          if (res.status === 404 || errDetail.includes('not available in Ollama')) {
+            userMsg = "The jerryys-ai model is not available in Ollama.";
+          } else if (errDetail) {
+            userMsg = errDetail;
+          }
+          renderErrorMessage(userMsg);
+          return;
+        }
 
-          // Render assistant reply IMMEDIATELY with zero delay
-          chatHistory.push({ role: 'assistant', content: reply });
-          renderAssistantMessage(reply, true);
+        // 9. Read streamed chunks progressively and append to the SAME assistant message
+        let streamInterrupted = false;
+        if (!res.body) {
+          throw new Error("ReadableStream not supported by response.");
+        }
 
-          // Asynchronously finalize database writes in background
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const textChunk = decoder.decode(value, { stream: true });
+            if (textChunk) {
+              accumulatedText += textChunk;
+              assistantMsgContainer.replyBody.textContent = accumulatedText;
+              kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+            }
+          }
+          const finalChunk = decoder.decode();
+          if (finalChunk) {
+            accumulatedText += finalChunk;
+            assistantMsgContainer.replyBody.textContent = accumulatedText;
+            kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+          }
+        } catch (streamErr) {
+          console.error('[STREAM] Streaming interrupted halfway:', streamErr);
+          streamInterrupted = true;
+        }
+
+        const perfOllamaDuration = (performance.now() - perfOllamaStart).toFixed(2);
+        console.log(`[PERF] main Ollama streaming generation: ${perfOllamaDuration} ms`);
+
+        // 10. When streaming completes, finalize Markdown rendering
+        if (accumulatedText.trim()) {
+          // Finalize Markdown
+          assistantMsgContainer.replyBody.style.whiteSpace = '';
+          assistantMsgContainer.replyBody.innerHTML = renderMarkdown(accumulatedText);
+          kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+
+          // Append to in-memory history
+          chatHistory.push({ role: 'assistant', content: accumulatedText });
+
+          // 11. Save the complete assistant response to Supabase ONCE
           const perfAssistantDbStart = performance.now();
           await userDbPromise;
-          await saveMessageRow('assistant', reply);
+          await saveMessageRow('assistant', accumulatedText);
           await touchChatUpdatedAt(currentChatId);
           const totalDbDuration = ((performance.now() - perfAssistantDbStart) + (perfOllamaStart - perfDbUserStart)).toFixed(2);
           console.log(`[PERF] database writes: ${totalDbDuration} ms`);
@@ -4582,32 +4666,30 @@
 
           // Trigger asynchronous background memory extraction (NON-BLOCKING & SMART-SKIPPED)
           triggerBackgroundMemoryExtraction(cleanPrompt);
-        } else {
-          let errDetail = '';
-          try {
-            const errJson = await res.json();
-            errDetail = errJson.detail || '';
-          } catch (_) {}
-
-          if (res.status === 401) {
-            showToast("Your session has expired. Please sign in again.");
-            renderErrorMessage("Your session has expired. Please sign in again.");
-            setTimeout(() => {
-              handleAuthUserChange(null);
-            }, 1500);
-            return;
+        } else if (!streamInterrupted) {
+          if (assistantMsgContainer) {
+            assistantMsgContainer.row.remove();
+            assistantMsgContainer = null;
           }
-
-          let userMsg = "Jerryy's AI could not connect to the local model. Make sure Ollama is running.";
-          if (res.status === 404 || errDetail.includes('not available in Ollama')) {
-            userMsg = "The jerryys-ai model is not available in Ollama.";
-          } else if (errDetail) {
-            userMsg = errDetail;
-          }
-          renderErrorMessage(userMsg);
+          renderErrorMessage("The model returned an empty response.");
         }
+
+        // If streaming stopped halfway, keep whatever text was received and show a small generation error
+        if (streamInterrupted) {
+          const errDiv = document.createElement('div');
+          errDiv.className = 'error-bubble';
+          errDiv.style.marginTop = '8px';
+          errDiv.style.fontSize = '0.85rem';
+          errDiv.textContent = 'Generation was interrupted.';
+          assistantMsgContainer.bubble.appendChild(errDiv);
+          kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+        }
+
       } catch (err) {
-        hideThinking();
+        if (assistantMsgContainer && !accumulatedText) {
+          assistantMsgContainer.row.remove();
+          assistantMsgContainer = null;
+        }
         renderErrorMessage("Jerryy's AI could not connect to the local model. Make sure Ollama is running.");
       } finally {
         isProcessingMessage = false;
@@ -4658,6 +4740,7 @@
     window.openMemoryModal = openMemoryModal;
     window.closeMemoryModal = closeMemoryModal;
     window.getUserMemories = () => userMemories;
+    window.isProcessingMessage = () => isProcessingMessage;
     window.runUserMemoryBackfill = runUserMemoryBackfill;
     window.extractInstantMemories = extractInstantMemories;
 

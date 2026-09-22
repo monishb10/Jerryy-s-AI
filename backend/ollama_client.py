@@ -160,6 +160,95 @@ async def chat_with_ollama(messages: List[Dict[str, str]]) -> str:
     return content.strip()
 
 
+async def stream_chat_with_ollama(messages: List[Dict[str, str]]):
+    """
+    Streams conversation messages from Ollama /api/chat endpoint.
+    - model: jerryys-ai
+    - stream: true
+    - think: false (never expose internal reasoning)
+    - keep_alive: 30m
+    - timeout: 600s
+    Yields plain-text token content chunks progressively as generated.
+    """
+    global _OLLAMA_CALL_COUNT
+    _OLLAMA_CALL_COUNT += 1
+    call_num = _OLLAMA_CALL_COUNT
+
+    t_start = time.perf_counter()
+    logger.info(f"[PERF] Ollama call #{call_num} started: streaming chat")
+
+    payload = {
+        "model": OLLAMA_MODEL,
+        "messages": messages,
+        "stream": True,
+        "think": False,
+        "keep_alive": OLLAMA_KEEP_ALIVE
+    }
+
+    url = f"{OLLAMA_URL}/api/chat"
+
+    client = httpx.AsyncClient(timeout=TIMEOUT_SECONDS)
+    try:
+        req = client.build_request("POST", url, json=payload)
+        response = await client.send(req, stream=True)
+    except httpx.ConnectError as e:
+        await client.aclose()
+        logger.error(f"Cannot connect to Ollama at {url}: {e}")
+        raise OllamaConnectionError(
+            "Jerryy's AI could not connect to the local model. Make sure Ollama is running."
+        ) from e
+    except httpx.TimeoutException as e:
+        await client.aclose()
+        logger.error(f"Ollama request timed out after {TIMEOUT_SECONDS}s: {e}")
+        raise OllamaResponseError(
+            "The model response timed out. Please try again with a shorter prompt."
+        ) from e
+    except Exception as e:
+        await client.aclose()
+        logger.error(f"Unexpected error communicating with Ollama: {e}")
+        raise OllamaConnectionError(
+            f"Error communicating with local Ollama: {e}"
+        ) from e
+
+    if response.status_code == 404:
+        await response.aclose()
+        await client.aclose()
+        logger.error(f"Model '{OLLAMA_MODEL}' not found in Ollama.")
+        raise OllamaModelNotFoundError(
+            f"The {OLLAMA_MODEL} model is not available in Ollama."
+        )
+
+    if response.status_code != 200:
+        err_bytes = await response.aread()
+        await response.aclose()
+        await client.aclose()
+        logger.error(f"Ollama returned HTTP {response.status_code}: {err_bytes.decode('utf-8', 'ignore')}")
+        raise OllamaResponseError(
+            f"Ollama returned error status {response.status_code}."
+        )
+
+    async def chunk_generator():
+        try:
+            async for line in response.aiter_lines():
+                if not line:
+                    continue
+                try:
+                    chunk = json.loads(line)
+                    msg_obj = chunk.get("message", {})
+                    content = msg_obj.get("content", "")
+                    if content:
+                        yield content
+                except Exception:
+                    continue
+        finally:
+            await response.aclose()
+            await client.aclose()
+            t_elapsed = (time.perf_counter() - t_start) * 1000.0
+            logger.info(f"[PERF] Ollama call #{call_num} (streaming chat) finalized in {t_elapsed:.2f} ms")
+
+    return chunk_generator()
+
+
 async def extract_memories_with_ollama(user_message: str) -> Dict[str, Any]:
     """
     Extracts stable, long-term personal facts from the user's latest message.
