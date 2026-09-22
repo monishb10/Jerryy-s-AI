@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from ollama_client import (
     chat_with_ollama,
+    extract_memories_with_ollama,
     check_ollama_health,
     OllamaConnectionError,
     OllamaModelNotFoundError,
@@ -31,7 +32,7 @@ logger = logging.getLogger("jerryys_ai")
 app = FastAPI(
     title="Jerryy's AI — Local Learning & Exam Preparation Model",
     description="FastAPI service connecting to local Ollama instance running jerryys-ai model.",
-    version="2.0.0"
+    version="2.1.0"
 )
 
 # CORS configuration
@@ -42,6 +43,43 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Unified System Prompt: Jerryy's AI naturally adapts to user intent
+UNIFIED_SYSTEM_PROMPT = (
+    "You are Jerryy's AI, a personal AI assistant, learning companion, exam-preparation tutor, programming helper, and practical advisor.\n"
+    "Your purpose is to help the user understand concepts clearly, solve problems, prepare for exams, write code, and make progress without unnecessary complexity.\n"
+    "Answer questions directly, accurately, and helpfully in clear, natural English.\n"
+    "Adapt naturally to what the user asks: whether they need exam-focused answers, code debugging, DBMS normalization, simple analogies, step-by-step teaching, or quick revision."
+)
+
+
+def build_memory_context(memories: List[Dict[str, Any]]) -> str:
+    """
+    Constructs a concise, structured memory context block for Ollama.
+    Scoped strictly to the currently authenticated user.
+    """
+    if not memories:
+        return ""
+
+    lines = ["USER MEMORY (Account-level facts belonging only to the currently authenticated user):"]
+    for mem in memories:
+        k = mem.get("key") or mem.get("memory_key")
+        v = mem.get("value") or mem.get("memory_value")
+        if k and v:
+            clean_k = str(k).replace("_", " ").strip().capitalize()
+            lines.append(f"- {clean_k}: {v}")
+
+    lines.append("")
+    lines.append("Memory Usage Instructions:")
+    lines.append("- These memories belong only to the currently authenticated user.")
+    lines.append("- Use them naturally and seamlessly when relevant.")
+    lines.append("- Do not mention that they came from a database or memory table.")
+    lines.append("- Do not repeat them unnecessarily if not relevant to the user's question.")
+    lines.append("- If the current user explicitly corrects a memory, prefer the newest information.")
+    lines.append("- Do not pretend to know personal information that is not listed here.")
+
+    return "\n".join(lines)
+
 
 # Pydantic Models
 class HistoryItem(BaseModel):
@@ -59,13 +97,23 @@ class HistoryItem(BaseModel):
 class ChatRequest(BaseModel):
     message: str = Field(..., max_length=4000, description="User message (max 4000 chars)")
     history: Optional[List[HistoryItem]] = Field(default_factory=list, description="Recent conversation history")
-    profile: Optional[str] = Field(default="default", description="Selected chat profile")
+    memories: Optional[List[Dict[str, Any]]] = Field(default_factory=list, description="User personal memories")
+    profile: Optional[str] = Field(default="default", description="Legacy chat profile (for backward compatibility)")
 
 
 class ChatResponse(BaseModel):
     reply: str
     model: str
     profile: str
+
+
+class ExtractMemoryRequest(BaseModel):
+    message: str = Field(..., max_length=4000, description="User message to analyze for memory extraction")
+
+
+class ExtractMemoryResponse(BaseModel):
+    memories: List[Dict[str, Any]]
+    forget_keys: Optional[List[str]] = []
 
 
 # Exception Handlers
@@ -109,17 +157,22 @@ async def health_check():
     }
 
 
-# 2. Chat Endpoint
+# 2. Chat Endpoint (Unified Mode + Cross-Chat Account Memory Injection)
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat_endpoint(payload: ChatRequest):
     user_msg = payload.message.strip()
     if not user_msg:
         raise HTTPException(status_code=400, detail="Message cannot be empty.")
 
-    profile_name = (payload.profile or "default").strip().lower()
-    system_prompt = get_chat_profile(profile_name)
+    # 1. Build unified system prompt
+    system_content = UNIFIED_SYSTEM_PROMPT
 
-    # Filter and validate history: only user and assistant, limit to last 12
+    # 2. Inject account-level memory context block if available
+    memory_context = build_memory_context(payload.memories or [])
+    if memory_context:
+        system_content += f"\n\n{memory_context}"
+
+    # 3. Filter and validate history: limit to last 12
     valid_history = []
     if payload.history:
         for item in payload.history[-12:]:
@@ -127,21 +180,28 @@ async def chat_endpoint(payload: ChatRequest):
             if r in ("user", "assistant"):
                 valid_history.append({"role": r, "content": item.content})
 
-    # Construct Ollama message sequence
+    # 4. Construct Ollama message sequence
     messages = [
-        {"role": "system", "content": system_prompt},
+        {"role": "system", "content": system_content},
         *valid_history,
         {"role": "user", "content": user_msg}
     ]
 
-    # Query Ollama
+    # 5. Query Ollama
     reply = await chat_with_ollama(messages)
 
     return {
         "reply": reply,
         "model": OLLAMA_MODEL,
-        "profile": profile_name
+        "profile": "unified"
     }
+
+
+# 3. Memory Extraction Endpoint (Runs in background, non-blocking for chat)
+@app.post("/api/extract-memories", response_model=ExtractMemoryResponse)
+async def extract_memories_endpoint(payload: ExtractMemoryRequest):
+    result = await extract_memories_with_ollama(payload.message)
+    return result
 
 
 # Static Frontend Routing

@@ -124,3 +124,46 @@ CREATE POLICY "Users can delete their own messages"
     ON public.messages
     FOR DELETE
     USING (auth.uid() = user_id);
+
+-- 8. User Memories Table (Cross-Chat Per-Account Memory)
+CREATE TABLE IF NOT EXISTS public.user_memories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    memory_key TEXT NOT NULL,
+    memory_value TEXT NOT NULL,
+    category TEXT DEFAULT 'general',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(user_id, memory_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_memories_user_id ON public.user_memories(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_memories_updated_at ON public.user_memories(updated_at DESC);
+
+ALTER TABLE public.user_memories ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view their own memories" ON public.user_memories;
+CREATE POLICY "Users can view their own memories"
+    ON public.user_memories
+    FOR SELECT
+    USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert their own memories" ON public.user_memories;
+CREATE POLICY "Users can insert their own memories"
+    ON public.user_memories
+    FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update their own memories" ON public.user_memories;
+CREATE POLICY "Users can update their own memories"
+    ON public.user_memories
+    FOR UPDATE
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete their own memories" ON public.user_memories;
+CREATE POLICY "Users can delete their own memories"
+    ON public.user_memories
+    FOR DELETE
+    USING (auth.uid() = user_id);
+

@@ -1502,63 +1502,224 @@
       margin: 14px 0;
     }
 
-    /* Mode / Profile Selector Bar */
-    .profile-selector-container {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 24px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      background: rgba(12, 14, 20, 0.7);
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-    .profile-selector-container::-webkit-scrollbar {
-      display: none;
-    }
-
-    .profile-selector-label {
-      font-family: var(--font-general);
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.45);
-      margin-right: 2px;
-      white-space: nowrap;
-    }
-
-    .profile-selector {
-      display: flex;
+    /* Memory Button in Profile Bar */
+    .btn-memory {
+      display: inline-flex;
       align-items: center;
       gap: 6px;
-    }
-
-    .profile-pill {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: rgba(255, 255, 255, 0.75);
-      padding: 5px 13px;
+      padding: 6px 14px;
       border-radius: 999px;
+      background: rgba(57, 255, 20, 0.1);
+      border: 1px solid rgba(57, 255, 20, 0.3);
+      color: #39FF14;
       font-family: var(--font-outfit);
       font-size: 0.8rem;
       font-weight: 500;
       cursor: pointer;
       white-space: nowrap;
       transition: all 0.2s var(--ease-smooth);
+      flex-shrink: 0;
     }
 
-    .profile-pill:hover {
-      background: rgba(255, 255, 255, 0.12);
-      color: #ffffff;
-      border-color: rgba(255, 255, 255, 0.25);
-    }
-
-    .profile-pill.active {
-      background: rgba(57, 255, 20, 0.14);
+    .btn-memory:hover {
+      background: rgba(57, 255, 20, 0.2);
       border-color: #39FF14;
+      box-shadow: 0 0 12px rgba(57, 255, 20, 0.25);
+      transform: translateY(-1px);
+    }
+
+    /* Memory Management Modal */
+    .memory-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .memory-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(4, 6, 12, 0.75);
+      backdrop-filter: blur(10px);
+    }
+
+    .memory-modal-dialog {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 520px;
+      max-height: 80vh;
+      background: rgba(14, 18, 28, 0.96);
+      border: 1px solid rgba(57, 255, 20, 0.3);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(57, 255, 20, 0.15);
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      overflow: hidden;
+      animation: memory-modal-pop 0.25s var(--ease-smooth);
+    }
+
+    @keyframes memory-modal-pop {
+      from { opacity: 0; transform: scale(0.95) translateY(8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .memory-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .memory-modal-title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .memory-modal-title-row h3 {
+      margin: 0;
+      font-family: var(--font-outfit);
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #ffffff;
+      letter-spacing: -0.01em;
+    }
+
+    .btn-close-memory {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 1.4rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-close-memory:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .memory-modal-sub {
+      font-family: var(--font-outfit);
+      font-size: 0.82rem;
+      color: rgba(255, 255, 255, 0.6);
+      margin: 0 0 16px 0;
+      line-height: 1.45;
+    }
+
+    .memory-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding-right: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+      max-height: 340px;
+    }
+
+    .memory-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.2s;
+    }
+
+    .memory-item:hover {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(57, 255, 20, 0.25);
+    }
+
+    .memory-item-content {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      gap: 2px;
+    }
+
+    .memory-item-key {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
       color: #39FF14;
-      box-shadow: 0 0 12px rgba(57, 255, 20, 0.18);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .memory-item-value {
+      font-family: var(--font-outfit);
+      font-size: 0.88rem;
+      color: #ffffff;
+      word-break: break-word;
+    }
+
+    .btn-delete-memory {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .btn-delete-memory:hover {
+      color: #ff6b6b;
+      background: rgba(255, 68, 68, 0.15);
+    }
+
+    .memory-empty-state {
+      padding: 28px 16px;
+      text-align: center;
+      font-family: var(--font-outfit);
+      font-size: 0.86rem;
+      color: rgba(255, 255, 255, 0.45);
+      line-height: 1.5;
+    }
+
+    .memory-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-clear-all-memory {
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: rgba(255, 68, 68, 0.12);
+      border: 1px solid rgba(255, 68, 68, 0.3);
+      color: #ff8585;
+      font-family: var(--font-outfit);
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-clear-all-memory:hover {
+      background: rgba(255, 68, 68, 0.25);
+      border-color: #ff6b6b;
+      color: #ffffff;
     }
 
     /* =========================================================
@@ -2234,14 +2395,22 @@
             <span id="user-email" class="user-email">user@example.com</span>
           </div>
         </div>
-        <button id="btn-logout" class="btn-logout" type="button" aria-label="Logout">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-            <polyline points="16 17 21 12 16 7"></polyline>
-            <line x1="21" y1="12" x2="9" y2="12"></line>
-          </svg>
-          <span>Logout</span>
-        </button>
+        <div class="user-profile-actions" style="display: flex; align-items: center; gap: 8px;">
+          <button id="btn-open-memory" class="btn-memory" type="button" aria-label="Personal Memory">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a5 5 0 0 1 5 5v1h1a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-8a3 3 0 0 1 3-3h1V7a5 5 0 0 1 5-5z"></path>
+            </svg>
+            <span>Memory</span>
+          </button>
+          <button id="btn-logout" class="btn-logout" type="button" aria-label="Logout">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>Logout</span>
+          </button>
+        </div>
       </div>
 
       <!-- Chat Layout Container: Sidebar + Main Content -->
@@ -2263,20 +2432,8 @@
           </div>
         </aside>
 
-        <!-- Main Chat Area -->
+        <!-- Main Chat Area (Unified Jerryy's AI Mode) -->
         <main class="chat-main-area">
-          <!-- Mode / Profile Selector Bar -->
-          <div class="profile-selector-container">
-            <span class="profile-selector-label">Mode:</span>
-            <div class="profile-selector" id="profile-selector">
-              <button type="button" class="profile-pill active" data-profile="default">General</button>
-              <button type="button" class="profile-pill" data-profile="exam">Exam Prep</button>
-              <button type="button" class="profile-pill" data-profile="dbms">DBMS</button>
-              <button type="button" class="profile-pill" data-profile="programming">Programming</button>
-              <button type="button" class="profile-pill" data-profile="study_support">Study Support</button>
-            </div>
-          </div>
-
           <!-- Chat Body -->
           <div class="kurama-modal-body" id="kurama-chat-body">
             <div class="kurama-empty-state" id="kurama-empty-state">
@@ -2308,6 +2465,31 @@
             </form>
           </div>
         </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- Memory Management Modal -->
+  <div id="memory-modal" class="memory-modal" style="display: none;">
+    <div class="memory-modal-backdrop" id="memory-modal-backdrop"></div>
+    <div class="memory-modal-dialog">
+      <div class="memory-modal-header">
+        <div class="memory-modal-title-row">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#39FF14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a5 5 0 0 1 5 5v1h1a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-8a3 3 0 0 1 3-3h1V7a5 5 0 0 1 5-5z"></path>
+          </svg>
+          <h3>Account Memory</h3>
+        </div>
+        <button id="btn-close-memory" class="btn-close-memory" type="button" aria-label="Close Memory Dialog">×</button>
+      </div>
+      <p class="memory-modal-sub">Facts remembered across all your chats for this Google account. Jerryy's AI uses these to personalize answers automatically.</p>
+
+      <div class="memory-list" id="memory-list">
+        <div class="memory-empty-state" id="memory-empty-state">No memories stored yet. Tell Jerryy's AI your name, college, or study topics, and they'll be remembered here.</div>
+      </div>
+
+      <div class="memory-modal-footer">
+        <button type="button" class="btn-clear-all-memory" id="btn-clear-all-memory">Clear All Memory</button>
       </div>
     </div>
   </div>
@@ -2772,10 +2954,20 @@
     let currentChatId = null;
     let chatHistory = [];
     let userChats = [];
+    let userMemories = [];
     let isProcessingMessage = false;
     let isLoadingChat = false;
-    let currentProfile = localStorage.getItem('jerryys_ai_profile') || 'default';
+    let currentProfile = 'default';
     let currentThinkingRow = null;
+
+    // Memory Modal DOM Elements
+    const btnOpenMemory = document.getElementById('btn-open-memory');
+    const memoryModal = document.getElementById('memory-modal');
+    const memoryModalBackdrop = document.getElementById('memory-modal-backdrop');
+    const btnCloseMemory = document.getElementById('btn-close-memory');
+    const memoryList = document.getElementById('memory-list');
+    const memoryEmptyState = document.getElementById('memory-empty-state');
+    const btnClearAllMemory = document.getElementById('btn-clear-all-memory');
 
     // Purge any legacy shared un-namespaced chat history
     try {
@@ -2797,6 +2989,50 @@
     const userName = document.getElementById('user-name');
     const userEmail = document.getElementById('user-email');
     const btnLogout = document.getElementById('btn-logout');
+
+    // =========================================================
+    // ISOLATED PER-USER MEMORY STORAGE HELPERS
+    // =========================================================
+    function getUserMemoriesStorageKey(userId) {
+      return `jerryys_ai_memories_${userId}`;
+    }
+
+    function getLocalUserMemories(userId) {
+      try {
+        const raw = localStorage.getItem(getUserMemoriesStorageKey(userId));
+        return raw ? JSON.parse(raw) : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function saveLocalUserMemory(userId, memoryObj) {
+      try {
+        let list = getLocalUserMemories(userId);
+        const memKey = memoryObj.memory_key || memoryObj.key;
+        const idx = list.findIndex(m => (m.memory_key || m.key) === memKey);
+        if (idx >= 0) {
+          list[idx] = { ...list[idx], ...memoryObj };
+        } else {
+          list.unshift(memoryObj);
+        }
+        localStorage.setItem(getUserMemoriesStorageKey(userId), JSON.stringify(list));
+      } catch (_) {}
+    }
+
+    function deleteLocalUserMemory(userId, memKey) {
+      try {
+        let list = getLocalUserMemories(userId);
+        list = list.filter(m => (m.memory_key || m.key) !== memKey);
+        localStorage.setItem(getUserMemoriesStorageKey(userId), JSON.stringify(list));
+      } catch (_) {}
+    }
+
+    function clearLocalUserMemories(userId) {
+      try {
+        localStorage.removeItem(getUserMemoriesStorageKey(userId));
+      } catch (_) {}
+    }
 
     // =========================================================
     // ISOLATED PER-USER STORAGE FALLBACK HELPERS
@@ -3317,6 +3553,217 @@
     }
 
     // =========================================================
+    // MEMORY MANAGEMENT: LOAD, SAVE, DELETE, CLEAR, RENDER
+    // =========================================================
+    function renderMemoryList() {
+      if (!memoryList) return;
+      memoryList.innerHTML = '';
+
+      if (!userMemories || userMemories.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'memory-empty-state';
+        empty.textContent = "No memories stored yet. Tell Jerryy's AI your name, college, or study topics, and they'll be remembered here.";
+        memoryList.appendChild(empty);
+        return;
+      }
+
+      userMemories.forEach(mem => {
+        const key = mem.memory_key || mem.key || '';
+        const val = mem.memory_value || mem.value || '';
+        if (!key || !val) return;
+
+        const item = document.createElement('div');
+        item.className = 'memory-item';
+
+        const content = document.createElement('div');
+        content.className = 'memory-item-content';
+
+        const kSpan = document.createElement('span');
+        kSpan.className = 'memory-item-key';
+        kSpan.textContent = key.replace(/_/g, ' ');
+
+        const vSpan = document.createElement('span');
+        vSpan.className = 'memory-item-value';
+        vSpan.textContent = val;
+
+        content.appendChild(kSpan);
+        content.appendChild(vSpan);
+
+        const btnDel = document.createElement('button');
+        btnDel.type = 'button';
+        btnDel.className = 'btn-delete-memory';
+        btnDel.title = 'Forget this memory';
+        btnDel.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        `;
+        btnDel.addEventListener('click', async () => {
+          if (currentUser) {
+            await deleteUserMemory(currentUser.id, key);
+            showToast(`Forgot ${key.replace(/_/g, ' ')}`);
+          }
+        });
+
+        item.appendChild(content);
+        item.appendChild(btnDel);
+        memoryList.appendChild(item);
+      });
+    }
+
+    async function loadUserMemories(userId) {
+      if (!userId) {
+        userMemories = [];
+        renderMemoryList();
+        return;
+      }
+
+      let loaded = [];
+
+      // 1. Try Supabase
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient
+            .from('user_memories')
+            .select('*')
+            .eq('user_id', userId)
+            .order('updated_at', { ascending: false });
+
+          if (!error && Array.isArray(data) && data.length > 0) {
+            loaded = data;
+          }
+        } catch (err) {
+          console.warn('[MEMORY] Supabase query skipped:', err);
+        }
+      }
+
+      // 2. Fallback to isolated local storage if Supabase returned empty
+      if (loaded.length === 0) {
+        loaded = getLocalUserMemories(userId);
+      }
+
+      userMemories = loaded;
+      renderMemoryList();
+    }
+
+    async function saveUserMemory(userId, key, value, category = 'general') {
+      if (!userId || !key || !value) return;
+
+      const memObj = {
+        user_id: userId,
+        memory_key: key,
+        memory_value: value,
+        category: category,
+        updated_at: new Date().toISOString()
+      };
+
+      if (supabaseClient) {
+        try {
+          await supabaseClient
+            .from('user_memories')
+            .upsert({
+              user_id: userId,
+              memory_key: key,
+              memory_value: value,
+              category: category,
+              updated_at: memObj.updated_at
+            }, { onConflict: 'user_id,memory_key' });
+        } catch (err) {
+          console.warn('[MEMORY] Supabase upsert skipped:', err);
+        }
+      }
+
+      saveLocalUserMemory(userId, memObj);
+
+      const existingIdx = userMemories.findIndex(m => (m.memory_key || m.key) === key);
+      if (existingIdx >= 0) {
+        userMemories[existingIdx] = memObj;
+      } else {
+        userMemories.unshift(memObj);
+      }
+      renderMemoryList();
+    }
+
+    async function deleteUserMemory(userId, key) {
+      if (!userId || !key) return;
+
+      if (supabaseClient) {
+        try {
+          await supabaseClient
+            .from('user_memories')
+            .delete()
+            .eq('user_id', userId)
+            .eq('memory_key', key);
+        } catch (err) {
+          console.warn('[MEMORY] Supabase delete skipped:', err);
+        }
+      }
+
+      deleteLocalUserMemory(userId, key);
+      userMemories = userMemories.filter(m => (m.memory_key || m.key) !== key);
+      renderMemoryList();
+    }
+
+    async function clearAllUserMemories(userId) {
+      if (!userId) return;
+
+      if (supabaseClient) {
+        try {
+          await supabaseClient
+            .from('user_memories')
+            .delete()
+            .eq('user_id', userId);
+        } catch (err) {
+          console.warn('[MEMORY] Supabase clear skipped:', err);
+        }
+      }
+
+      clearLocalUserMemories(userId);
+      userMemories = [];
+      renderMemoryList();
+      showToast('All memories cleared');
+    }
+
+    // Background Non-Blocking Memory Extraction
+    async function triggerBackgroundMemoryExtraction(promptText) {
+      if (!currentUser || !currentUser.id || !promptText) return;
+      try {
+        const res = await fetch('/api/extract-memories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: promptText })
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        // Handle conversational forget intents
+        if (data.forget_keys && Array.isArray(data.forget_keys) && data.forget_keys.length > 0) {
+          for (const fk of data.forget_keys) {
+            if (fk === '__all__') {
+              await clearAllUserMemories(currentUser.id);
+            } else {
+              await deleteUserMemory(currentUser.id, fk);
+            }
+          }
+          showToast('Memory updated');
+        }
+
+        // Handle extracted personal facts
+        if (data.memories && Array.isArray(data.memories) && data.memories.length > 0) {
+          for (const mem of data.memories) {
+            if (mem.key && mem.value) {
+              await saveUserMemory(currentUser.id, mem.key, mem.value, mem.category || 'general');
+            }
+          }
+          showToast('Personal fact remembered');
+        }
+      } catch (err) {
+        console.warn('[MEMORY] Background extraction skipped:', err);
+      }
+    }
+
+    // =========================================================
     // LOGOUT HANDLER (CLEARS ALL USER STATE & REDIRECTS)
     // =========================================================
     async function handleLogout() {
@@ -3350,7 +3797,11 @@
 
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        navigateBackToWelcome();
+        if (memoryModal && memoryModal.style.display === 'flex') {
+          closeMemoryModal();
+        } else {
+          navigateBackToWelcome();
+        }
       }
     });
 
@@ -3364,9 +3815,12 @@
         currentChatId = null;
         chatHistory = [];
         userChats = [];
+        userMemories = []; // Scrub memory completely on logout
         clearMessageContainer();
         renderUserProfile(null);
         renderChatHistoryList([]);
+        renderMemoryList();
+        closeMemoryModal();
         window.location.replace('/');
         return;
       }
@@ -3383,12 +3837,17 @@
       currentChatId = null;
       chatHistory = [];
       userChats = [];
+      userMemories = []; // Scrub previous account memory before loading new
       clearMessageContainer();
       renderUserProfile(user);
       renderChatHistoryList([]);
+      renderMemoryList();
 
-      // Load newly authenticated user's chats
-      await loadUserChatList(user);
+      // Load newly authenticated user's chats and account memories concurrently
+      await Promise.all([
+        loadUserChatList(user),
+        loadUserMemories(user.id)
+      ]);
     }
 
     // Auth guard with 8s failsafe timeout
@@ -3473,24 +3932,32 @@
       window.location.replace('/');
     }
 
-    // Profile selector handling
-    const profilePills = document.querySelectorAll('.profile-pill');
-    function initProfileUI() {
-      profilePills.forEach(pill => {
-        if (pill.dataset.profile === currentProfile) {
-          pill.classList.add('active');
-        } else {
-          pill.classList.remove('active');
+    // Memory Modal event listeners
+    function openMemoryModal() {
+      if (memoryModal) {
+        renderMemoryList();
+        memoryModal.style.display = 'flex';
+      }
+    }
+
+    function closeMemoryModal() {
+      if (memoryModal) {
+        memoryModal.style.display = 'none';
+      }
+    }
+
+    if (btnOpenMemory) btnOpenMemory.addEventListener('click', openMemoryModal);
+    if (btnCloseMemory) btnCloseMemory.addEventListener('click', closeMemoryModal);
+    if (memoryModalBackdrop) memoryModalBackdrop.addEventListener('click', closeMemoryModal);
+
+    if (btnClearAllMemory) {
+      btnClearAllMemory.addEventListener('click', async () => {
+        if (!currentUser) return;
+        if (confirm("Are you sure you want Jerryy's AI to clear all memories for your account? Your chat history will not be deleted.")) {
+          await clearAllUserMemories(currentUser.id);
         }
-        pill.addEventListener('click', () => {
-          profilePills.forEach(p => p.classList.remove('active'));
-          pill.classList.add('active');
-          currentProfile = pill.dataset.profile;
-          localStorage.setItem('jerryys_ai_profile', currentProfile);
-        });
       });
     }
-    initProfileUI();
 
     // Quick chip buttons
     document.querySelectorAll('.kurama-chip').forEach(chip => {
@@ -3658,14 +4125,14 @@
         // 7. Show thinking indicator
         showThinking();
 
-        // 8. Query /api/chat
+        // 8. Query /api/chat with injected account memory
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             message: cleanPrompt,
             history: historyToSend,
-            profile: currentProfile
+            memories: userMemories
           })
         });
 
@@ -3686,6 +4153,9 @@
 
           // 12. Update updated_at
           await touchChatUpdatedAt(currentChatId);
+
+          // 13. Trigger asynchronous background memory extraction (NON-BLOCKING)
+          triggerBackgroundMemoryExtraction(cleanPrompt);
         } else {
           let errDetail = '';
           try {
@@ -3745,6 +4215,13 @@
     window.handleUserPrompt = handleUserPrompt;
     window.loadChat = loadChat;
     window.handleNewChat = handleNewChat;
+    window.loadUserMemories = loadUserMemories;
+    window.saveUserMemory = saveUserMemory;
+    window.deleteUserMemory = deleteUserMemory;
+    window.clearAllUserMemories = clearAllUserMemories;
+    window.openMemoryModal = openMemoryModal;
+    window.closeMemoryModal = closeMemoryModal;
+    window.getUserMemories = () => userMemories;
 
     function escapeHtml(str) {
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
