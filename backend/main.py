@@ -17,7 +17,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator
 
-from auth import get_current_user, AuthenticatedUser
+import httpx
+from auth import get_current_user, AuthenticatedUser, SUPABASE_URL, SUPABASE_KEY
+from generation_manager import generation_manager, GenerationJob
 
 from ollama_client import (
     chat_with_ollama,
@@ -138,6 +140,19 @@ class ExtractMemoryRequest(BaseModel):
 class ExtractMemoryResponse(BaseModel):
     memories: List[Dict[str, Any]]
     forget_keys: Optional[List[str]] = []
+
+
+class StartGenerationRequest(BaseModel):
+    chat_id: str = Field(..., description="ID of the chat")
+    message: str = Field(..., max_length=4000, description="User prompt text")
+    history: Optional[List[HistoryItem]] = Field(default_factory=list, description="Recent conversation history")
+    memories: Optional[List[Dict[str, Any]]] = Field(default_factory=list, description="User personal memories")
+
+
+class StartGenerationResponse(BaseModel):
+    generation_id: str
+    chat_id: str
+    status: str
 
 
 class BackfillMemoryRequest(BaseModel):
@@ -319,6 +334,222 @@ async def chat_stream_endpoint(
             "X-Accel-Buffering": "no"
         }
     )
+
+
+# -----------------------------------------------------------------------------
+# 4. Decoupled Backend AI Generation Job System (Persistent across page reloads & chat switches)
+# -----------------------------------------------------------------------------
+async def insert_supabase_message(user_id: str, chat_id: str, role: str, content: str, token: Optional[str] = None):
+    """
+    Saves a single message row to Supabase messages table via PostgREST.
+    Ensures user-scoped security and error resilience.
+    """
+    if not token or not SUPABASE_URL or token.startswith("test-token-"):
+        return
+    url = f"{SUPABASE_URL}/rest/v1/messages"
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal"
+    }
+    payload = {
+        "user_id": user_id,
+        "chat_id": chat_id,
+        "role": role,
+        "content": content
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(url, json=payload, headers=headers)
+            if resp.status_code in (200, 201):
+                logger.info(f"[DB] Inserted {role} message into Supabase for chat {chat_id}")
+            else:
+                logger.warning(f"[DB] Supabase insert {role} returned HTTP {resp.status_code}: {resp.text}")
+    except Exception as e:
+        logger.warning(f"[DB] Supabase insert message failed: {e}")
+
+
+async def run_background_generation(
+    generation_id: str,
+    messages: list,
+    user_id: str,
+    chat_id: str,
+    token: Optional[str]
+):
+    """
+    Background worker task: streams from Ollama independently of frontend connection.
+    Accumulates partial_content, handles Stop Generation, and saves complete response to Supabase once.
+    """
+    async with generation_manager.ollama_semaphore:
+        job = generation_manager.get_job(generation_id, user_id=user_id)
+        if not job or job.status != "generating":
+            return
+
+        logger.info(f"[JOB] Starting background Ollama streaming for generation {generation_id} in chat {chat_id}")
+        t_start = time.perf_counter()
+        try:
+            chunk_iterator = await stream_chat_with_ollama(messages)
+            async for chunk in chunk_iterator:
+                # Check if job was stopped mid-stream
+                job = generation_manager.get_job(generation_id, user_id=user_id)
+                if not job or job.status != "generating":
+                    logger.info(f"[JOB] Generation {generation_id} stopped mid-stream, breaking out")
+                    break
+                generation_manager.append_content(generation_id, chunk)
+
+            # If generation completed normally (not stopped), finish and save to Supabase
+            job = generation_manager.get_job(generation_id, user_id=user_id)
+            if job and job.status == "generating":
+                generation_manager.finish_job(generation_id, status="complete")
+                if job.partial_content.strip():
+                    await insert_supabase_message(user_id, chat_id, "assistant", job.partial_content, token)
+
+            elapsed = (time.perf_counter() - t_start) * 1000.0
+            logger.info(f"[JOB] Background generation {generation_id} completed in {elapsed:.2f} ms")
+
+        except asyncio.CancelledError:
+            logger.info(f"[JOB] Generation {generation_id} task cancelled")
+            job = generation_manager.get_job(generation_id, user_id=user_id)
+            if job and job.status == "generating":
+                generation_manager.finish_job(generation_id, status="stopped")
+                if job.partial_content.strip():
+                    await insert_supabase_message(user_id, chat_id, "assistant", job.partial_content, token)
+        except Exception as e:
+            logger.error(f"[JOB] Generation {generation_id} failed: {e}")
+            generation_manager.finish_job(generation_id, status="failed", error=str(e))
+
+
+@app.post("/api/generations", response_model=StartGenerationResponse)
+async def start_generation_endpoint(
+    payload: StartGenerationRequest,
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    user_msg = payload.message.strip()
+    if not user_msg:
+        raise HTTPException(status_code=400, detail="Message cannot be empty.")
+
+    chat_id = payload.chat_id.strip()
+    if not chat_id:
+        raise HTTPException(status_code=400, detail="Chat ID cannot be empty.")
+
+    # 1. Deduplication / Concurrency check: If already generating for this chat, return active job
+    existing_job = generation_manager.get_active_job_for_chat(chat_id, current_user.id)
+    if existing_job:
+        logger.info(f"[JOB] Reusing active generation {existing_job.id} for chat {chat_id}")
+        return {
+            "generation_id": existing_job.id,
+            "chat_id": chat_id,
+            "status": existing_job.status
+        }
+
+    # Extract Bearer token for Supabase operations
+    token = None
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:].strip()
+
+    # 2. Save user message to Supabase asynchronously (non-blocking)
+    if token:
+        asyncio.create_task(insert_supabase_message(current_user.id, chat_id, "user", user_msg, token))
+
+    # 3. Build unified system prompt with strictly filtered account memories
+    system_content = UNIFIED_SYSTEM_PROMPT
+    safe_memories = []
+    for m in (payload.memories or []):
+        m_uid = m.get("user_id")
+        if not m_uid or str(m_uid) == current_user.id:
+            safe_memories.append(m)
+
+    memory_context = build_memory_context(safe_memories)
+    if memory_context:
+        system_content += f"\n\n{memory_context}"
+
+    # 4. Filter history (last 12)
+    valid_history = []
+    if payload.history:
+        for item in payload.history[-12:]:
+            r = item.role.lower()
+            if r in ("user", "assistant"):
+                valid_history.append({"role": r, "content": item.content})
+
+    # 5. Construct Ollama message sequence
+    messages = [
+        {"role": "system", "content": system_content},
+        *valid_history,
+        {"role": "user", "content": user_msg}
+    ]
+
+    # 6. Create Generation Job
+    job = await generation_manager.create_job(current_user.id, chat_id, user_msg)
+
+    # 7. Start background streaming task
+    task = asyncio.create_task(
+        run_background_generation(job.id, messages, current_user.id, chat_id, token)
+    )
+    job.asyncio_task = task
+
+    return {
+        "generation_id": job.id,
+        "chat_id": chat_id,
+        "status": job.status
+    }
+
+
+@app.get("/api/generations/{generation_id}")
+async def get_generation_status_endpoint(
+    generation_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    job = generation_manager.get_job(generation_id, user_id=current_user.id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Generation not found or access denied.")
+
+    return job.to_dict()
+
+
+@app.get("/api/chats/{chat_id}/active-generation")
+async def get_active_chat_generation_endpoint(
+    chat_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    job = generation_manager.get_active_job_for_chat(chat_id, current_user.id)
+    if not job:
+        return {"active": False, "has_active": False}
+
+    return {
+        "active": True,
+        "has_active": True,
+        **job.to_dict()
+    }
+
+
+@app.post("/api/generations/{generation_id}/stop")
+async def stop_generation_endpoint(
+    generation_id: str,
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    job = generation_manager.get_job(generation_id, user_id=current_user.id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Generation not found or access denied.")
+
+    token = None
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:].strip()
+
+    was_cancelled, stopped_job = generation_manager.cancel_job(generation_id, current_user.id)
+    if stopped_job and stopped_job.partial_content.strip():
+        # Save partial content to Supabase once as assistant response
+        await insert_supabase_message(current_user.id, stopped_job.chat_id, "assistant", stopped_job.partial_content, token)
+
+    return {
+        "generation_id": generation_id,
+        "status": "stopped",
+        "content": stopped_job.partial_content if stopped_job else ""
+    }
 
 
 # 4. Memory Extraction Endpoint (Runs in background, non-blocking for chat)

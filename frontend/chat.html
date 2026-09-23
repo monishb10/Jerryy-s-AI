@@ -2115,6 +2115,31 @@
       box-shadow: 0 0 15px rgba(57, 255, 20, 0.6);
     }
 
+    .btn-stop-generation {
+      height: 38px;
+      padding: 0 14px;
+      border-radius: 20px;
+      background: rgba(255, 68, 68, 0.15);
+      border: 1px solid rgba(255, 68, 68, 0.4);
+      color: #ff6666;
+      font-family: var(--font-outfit);
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.25s var(--ease-smooth);
+    }
+
+    .btn-stop-generation:hover {
+      background: rgba(255, 68, 68, 0.3);
+      border-color: #ff4444;
+      color: #ffffff;
+      box-shadow: 0 0 14px rgba(255, 68, 68, 0.45);
+    }
+
     /* Toast Notification for Hex Copies */
     .toast-pill {
       position: fixed;
@@ -2388,6 +2413,12 @@
           <div class="kurama-modal-footer">
             <form class="kurama-input-form" id="kurama-chat-form">
               <textarea id="kurama-input" class="kurama-text-input" rows="1" placeholder="Ask Jerryy's AI anything..."></textarea>
+              <button type="button" class="btn-stop-generation" id="btn-stop-generation" aria-label="Stop generation" title="Stop generation">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                </svg>
+                <span>Stop</span>
+              </button>
               <button type="submit" class="btn-send-prompt" id="btn-send-prompt" aria-label="Send prompt">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -2880,6 +2911,7 @@
     const kuramaForm = document.getElementById('kurama-chat-form');
     const kuramaInput = document.getElementById('kurama-input');
     const btnSendPrompt = document.getElementById('btn-send-prompt');
+    const btnStopGeneration = document.getElementById('btn-stop-generation');
 
     // State Variables
     let currentUser = null;
@@ -2892,7 +2924,7 @@
     let isLoadingChat = false;
     let currentProfile = 'default';
     let currentThinkingRow = null;
-    let activeStreamAbortController = null;
+    let activeGenerations = {}; // { [chatId]: { generationId, pollingInterval, assistantContainer, promptText } }
 
     // Memory Modal DOM Elements
     const btnOpenMemory = document.getElementById('btn-open-memory');
@@ -3107,10 +3139,6 @@
     // =========================================================
     async function loadChat(chatId) {
       if (!chatId || isLoadingChat) return;
-      if (activeStreamAbortController) {
-        try { activeStreamAbortController.abort(); } catch (_) {}
-        activeStreamAbortController = null;
-      }
       isLoadingChat = true;
 
       try {
@@ -3164,6 +3192,9 @@
             localStorage.setItem(`jerryys_ai_last_chat_${currentUser.id}`, chatId);
           } catch (_) {}
         }
+
+        // 7. Reattach to any ongoing background generation for this chat
+        await checkAndAttachActiveGeneration(chatId);
       } finally {
         isLoadingChat = false;
       }
@@ -3292,13 +3323,13 @@
     // =========================================================
     async function handleNewChat(focusInput = true) {
       if (!currentUser || !currentUser.id) return;
-      if (activeStreamAbortController) {
-        try { activeStreamAbortController.abort(); } catch (_) {}
-        activeStreamAbortController = null;
-      }
 
       clearMessageContainer();
       chatHistory = [];
+      hideStopGenerationButton();
+      if (btnSendPrompt) btnSendPrompt.disabled = false;
+      if (kuramaInput) kuramaInput.disabled = false;
+      isProcessingMessage = false;
 
       const newChatId = (typeof crypto !== 'undefined' && crypto.randomUUID)
         ? crypto.randomUUID()
@@ -3374,6 +3405,11 @@
       }
       if (!currentUser || !currentUser.id || !chatId) return;
 
+      // Stop any active generation for this deleted chat
+      if (activeGenerations[chatId]) {
+        await stopActiveGeneration(chatId);
+      }
+
       // Delete from Supabase
       if (supabaseClient) {
         try {
@@ -3396,10 +3432,7 @@
 
       // If the deleted chat was currently open
       if (currentChatId === chatId) {
-        if (activeStreamAbortController) {
-          try { activeStreamAbortController.abort(); } catch (_) {}
-          activeStreamAbortController = null;
-        }
+        hideStopGenerationButton();
         clearMessageContainer();
         chatHistory = [];
         if (userChats.length > 0) {
@@ -4061,10 +4094,13 @@
     // AUTH CHANGE COORDINATOR (PREVENTS CONCURRENT INITIALIZATION)
     // =========================================================
     async function handleAuthUserChange(user) {
-      if (activeStreamAbortController) {
-        try { activeStreamAbortController.abort(); } catch (_) {}
-        activeStreamAbortController = null;
+      for (const k in activeGenerations) {
+        if (activeGenerations[k]?.pollingInterval) {
+          clearInterval(activeGenerations[k].pollingInterval);
+        }
       }
+      activeGenerations = {};
+      hideStopGenerationButton();
       if (!user || !user.id) {
         currentAuthUserId = null;
         currentUser = null;
@@ -4381,8 +4417,254 @@
       return { row, bubble, replyBody };
     }
 
+    function showStopGenerationButton() {
+      if (btnStopGeneration) btnStopGeneration.style.display = 'inline-flex';
+    }
+
+    function hideStopGenerationButton() {
+      if (btnStopGeneration) btnStopGeneration.style.display = 'none';
+    }
+
     // =========================================================
-    // SAVE MESSAGE ONLY ONCE & QUERY OLLAMA WITH STREAMING
+    // EXPLICIT STOP GENERATION SUPPORT
+    // =========================================================
+    async function stopActiveGeneration(targetChatId = null) {
+      const chatId = targetChatId || currentChatId;
+      if (!chatId) return;
+
+      let genId = activeGenerations[chatId]?.generationId;
+
+      if (!genId) {
+        // Query backend for active generation on this chat
+        try {
+          const session = await getAuthenticatedSession();
+          if (session && session.access_token) {
+            const res = await fetch(`/api/chats/${chatId}/active-generation`, {
+              headers: { 'Authorization': `Bearer ${session.access_token}` }
+            });
+            if (res.ok) {
+              const d = await res.json();
+              if (d && (d.active || d.has_active) && d.generation_id) {
+                genId = d.generation_id;
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (!genId) return;
+
+      try {
+        const session = await getAuthenticatedSession();
+        if (session && session.access_token) {
+          await fetch(`/api/generations/${genId}/stop`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${session.access_token}` }
+          });
+        }
+      } catch (err) {
+        console.warn('[STOP] Failed to stop generation:', err);
+      }
+    }
+
+    if (btnStopGeneration) {
+      btnStopGeneration.addEventListener('click', (e) => {
+        e.preventDefault();
+        stopActiveGeneration();
+      });
+    }
+
+    // =========================================================
+    // GENERATION POLLING ENGINE (Progressive Streaming Accumulation)
+    // =========================================================
+    function startGenerationPolling(generationId, chatId) {
+      if (activeGenerations[chatId]?.pollingInterval) {
+        clearInterval(activeGenerations[chatId].pollingInterval);
+      }
+
+      const pollInterval = setInterval(async () => {
+        try {
+          const session = await getAuthenticatedSession();
+          if (!session || !session.access_token) return;
+
+          const res = await fetch(`/api/generations/${generationId}`, {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          });
+
+          if (!res.ok) {
+            if (res.status === 404 || res.status === 401) {
+              clearInterval(pollInterval);
+              delete activeGenerations[chatId];
+              if (currentChatId === chatId) {
+                hideStopGenerationButton();
+                if (btnSendPrompt) btnSendPrompt.disabled = false;
+                if (kuramaInput) kuramaInput.disabled = false;
+                isProcessingMessage = false;
+              }
+            }
+            return;
+          }
+
+          const job = await res.json();
+          const isCurrent = (currentChatId === chatId);
+          const active = activeGenerations[chatId];
+          const container = active?.assistantContainer;
+          const contentText = job.partial_content || job.content || '';
+
+          // Stream chunks progressively into the same assistant message
+          if (isCurrent && container && container.replyBody) {
+            if (contentText) {
+              container.replyBody.textContent = contentText;
+              kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+            }
+          }
+
+          // Check terminal states
+          if (job.status === 'complete' || job.status === 'completed') {
+            clearInterval(pollInterval);
+            delete activeGenerations[chatId];
+
+            if (isCurrent) {
+              if (container && container.replyBody) {
+                container.replyBody.style.whiteSpace = '';
+                container.replyBody.innerHTML = renderMarkdown(contentText);
+                kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+              }
+              chatHistory.push({ role: 'assistant', content: contentText });
+              hideStopGenerationButton();
+              if (btnSendPrompt) btnSendPrompt.disabled = false;
+              if (kuramaInput) {
+                kuramaInput.disabled = false;
+                kuramaInput.focus();
+              }
+              isProcessingMessage = false;
+            }
+
+            if (active?.promptText) {
+              triggerBackgroundMemoryExtraction(active.promptText);
+            }
+          } else if (job.status === 'stopped') {
+            clearInterval(pollInterval);
+            delete activeGenerations[chatId];
+
+            if (isCurrent) {
+              if (container && container.replyBody) {
+                container.replyBody.style.whiteSpace = '';
+                container.replyBody.innerHTML = renderMarkdown(contentText);
+                const stopNote = document.createElement('div');
+                stopNote.style.fontSize = '0.78rem';
+                stopNote.style.color = 'rgba(255, 255, 255, 0.45)';
+                stopNote.style.marginTop = '6px';
+                stopNote.textContent = '[Generation stopped by user]';
+                container.bubble.appendChild(stopNote);
+                kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+              }
+              if (contentText) {
+                chatHistory.push({ role: 'assistant', content: contentText });
+              }
+              hideStopGenerationButton();
+              if (btnSendPrompt) btnSendPrompt.disabled = false;
+              if (kuramaInput) {
+                kuramaInput.disabled = false;
+                kuramaInput.focus();
+              }
+              isProcessingMessage = false;
+            }
+          } else if (job.status === 'failed') {
+            clearInterval(pollInterval);
+            delete activeGenerations[chatId];
+
+            if (isCurrent) {
+              if (container) {
+                container.row.remove();
+              }
+              renderErrorMessage(job.error || "Generation failed.");
+              hideStopGenerationButton();
+              if (btnSendPrompt) btnSendPrompt.disabled = false;
+              if (kuramaInput) {
+                kuramaInput.disabled = false;
+                kuramaInput.focus();
+              }
+              isProcessingMessage = false;
+            }
+          }
+        } catch (pollErr) {
+          console.warn('[POLL] Generation poll tick error:', pollErr);
+        }
+      }, 450);
+
+      if (activeGenerations[chatId]) {
+        activeGenerations[chatId].pollingInterval = pollInterval;
+      }
+    }
+
+    // =========================================================
+    // REATTACH TO ONGOING GENERATION (ON SWITCH OR PAGE RELOAD)
+    // =========================================================
+    async function checkAndAttachActiveGeneration(chatId) {
+      if (!chatId || !currentUser) return;
+      try {
+        const session = await getAuthenticatedSession();
+        if (!session || !session.access_token) return;
+
+        const res = await fetch(`/api/chats/${chatId}/active-generation`, {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data && (data.active || data.has_active) && data.generation_id) {
+            if (currentChatId !== chatId) return;
+
+            let active = activeGenerations[chatId];
+            let assistantContainer;
+            if (active && active.assistantContainer && active.assistantContainer.row && active.assistantContainer.row.parentNode) {
+              assistantContainer = active.assistantContainer;
+            } else {
+              assistantContainer = createStreamingAssistantMessage();
+              const partial = data.partial_content || data.content || '';
+              if (partial) {
+                assistantContainer.replyBody.textContent = partial;
+              }
+            }
+
+            showStopGenerationButton();
+            if (btnSendPrompt) btnSendPrompt.disabled = true;
+            if (kuramaInput) kuramaInput.disabled = true;
+            isProcessingMessage = true;
+
+            if (!active || !active.pollingInterval) {
+              activeGenerations[chatId] = {
+                generationId: data.generation_id,
+                chatId: chatId,
+                assistantContainer: assistantContainer,
+                promptText: ''
+              };
+              startGenerationPolling(data.generation_id, chatId);
+            } else {
+              active.assistantContainer = assistantContainer;
+            }
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('[GENERATION] checkAndAttachActiveGeneration failed:', err);
+      }
+
+      if (currentChatId === chatId) {
+        hideStopGenerationButton();
+        if (btnSendPrompt) btnSendPrompt.disabled = false;
+        if (kuramaInput) kuramaInput.disabled = false;
+        isProcessingMessage = false;
+      }
+    }
+
+    // =========================================================
+    // SAVE MESSAGE ONLY ONCE & QUERY OLLAMA VIA DECOUPLED BACKEND JOB
     // =========================================================
     async function handleUserPrompt(promptText) {
       const cleanPrompt = promptText.trim();
@@ -4393,11 +4675,9 @@
       if (kuramaInput) kuramaInput.disabled = true;
 
       const perfReqStart = performance.now();
-      console.log('[PERF] request started');
+      console.log('[PERF] generation job requested');
 
       let assistantMsgContainer = null;
-      let accumulatedText = '';
-      let streamSignal = null;
 
       try {
         if (!currentChatId) {
@@ -4405,14 +4685,6 @@
         }
 
         const targetChatId = currentChatId;
-
-        // Cancel any pending stream cleanly before starting a new one
-        if (activeStreamAbortController) {
-          try { activeStreamAbortController.abort(); } catch (_) {}
-          activeStreamAbortController = null;
-        }
-        activeStreamAbortController = new AbortController();
-        streamSignal = activeStreamAbortController.signal;
 
         if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
 
@@ -4452,8 +4724,7 @@
         console.log(`[PERF] memory database load: ${perfMemDuration} ms`);
 
         // 5. Asynchronous background database writes for user message (non-blocking)
-        const perfDbUserStart = performance.now();
-        const userDbPromise = (async () => {
+        (async () => {
           try {
             await updateChatTitleIfNew(targetChatId, cleanPrompt);
             await saveMessageRow('user', cleanPrompt, targetChatId);
@@ -4476,57 +4747,52 @@
 
         // 7. Create ONE empty assistant message container
         assistantMsgContainer = createStreamingAssistantMessage();
+        showStopGenerationButton();
 
-        // 8. Start /api/chat/stream with authenticated Bearer token and injected account memory
-        let chatHeaders = {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        };
-
-        const perfOllamaStart = performance.now();
-        let res = await fetch('/api/chat/stream', {
+        // 8. Start POST /api/generations with authenticated Bearer token
+        let res = await fetch('/api/generations', {
           method: 'POST',
-          headers: chatHeaders,
-          signal: streamSignal,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
           body: JSON.stringify({
+            chat_id: targetChatId,
             message: cleanPrompt,
             history: historyToSend,
             memories: userMemories
           })
         });
 
-        // Handle 401 Unauthorized: attempt refresh then redirect if invalid
+        // Handle 401 Unauthorized: attempt refresh
         if (res.status === 401) {
-          console.warn('[AUTH] /api/chat/stream returned 401 Unauthorized. Attempting session refresh...');
+          console.warn('[AUTH] /api/generations returned 401 Unauthorized. Attempting session refresh...');
           let refreshed = false;
           if (supabaseClient && !(typeof window !== 'undefined' && window.__mockSession)) {
             try {
               const { data: refreshData, error: refreshErr } = await supabaseClient.auth.refreshSession();
               if (!refreshErr && refreshData?.session?.access_token) {
                 session = refreshData.session;
-                chatHeaders['Authorization'] = `Bearer ${session.access_token}`;
-                res = await fetch('/api/chat/stream', {
+                res = await fetch('/api/generations', {
                   method: 'POST',
-                  headers: chatHeaders,
-                  signal: streamSignal,
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                  },
                   body: JSON.stringify({
+                    chat_id: targetChatId,
                     message: cleanPrompt,
                     history: historyToSend,
                     memories: userMemories
                   })
                 });
-                if (res.ok) {
-                  refreshed = true;
-                }
+                if (res.ok) refreshed = true;
               }
             } catch (_) {}
           }
-
           if (!refreshed && res.status === 401) {
-            if (assistantMsgContainer) {
-              assistantMsgContainer.row.remove();
-              assistantMsgContainer = null;
-            }
+            if (assistantMsgContainer) assistantMsgContainer.row.remove();
+            hideStopGenerationButton();
             showToast("Your session has expired. Please sign in again.");
             renderErrorMessage("Your session has expired. Please sign in again.");
             setTimeout(() => {
@@ -4536,140 +4802,46 @@
           }
         }
 
-        // Check if Ollama failed before streaming starts
         if (!res.ok) {
-          if (assistantMsgContainer) {
-            assistantMsgContainer.row.remove();
-            assistantMsgContainer = null;
-          }
           let errDetail = '';
           try {
             const errJson = await res.json();
             errDetail = errJson.detail || '';
           } catch (_) {}
 
-          let userMsg = "Jerryy's AI could not connect to the local model. Make sure Ollama is running.";
-          if (res.status === 404 || errDetail.includes('not available in Ollama')) {
-            userMsg = "The jerryys-ai model is not available in Ollama.";
-          } else if (errDetail) {
-            userMsg = errDetail;
-          }
-          renderErrorMessage(userMsg);
-          return;
-        }
-
-        // 9. Read streamed chunks progressively and append to the SAME assistant message
-        let streamInterrupted = false;
-        if (!res.body) {
-          throw new Error("ReadableStream not supported by response.");
-        }
-
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder('utf-8');
-
-        try {
-          while (true) {
-            if (streamSignal && streamSignal.aborted) break;
-            const { done, value } = await reader.read();
-            if (done) break;
-            const textChunk = decoder.decode(value, { stream: true });
-            if (textChunk) {
-              accumulatedText += textChunk;
-              if (assistantMsgContainer && assistantMsgContainer.replyBody) {
-                assistantMsgContainer.replyBody.textContent = accumulatedText;
-                kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
-              }
-            }
-          }
-          if (!streamSignal || !streamSignal.aborted) {
-            const finalChunk = decoder.decode();
-            if (finalChunk) {
-              accumulatedText += finalChunk;
-              if (assistantMsgContainer && assistantMsgContainer.replyBody) {
-                assistantMsgContainer.replyBody.textContent = accumulatedText;
-                kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
-              }
-            }
-          }
-        } catch (streamErr) {
-          if (streamSignal && streamSignal.aborted) {
-            console.log('[STREAM] Stream cleanly cancelled by user action.');
-            return;
-          }
-          console.error('[STREAM] Streaming interrupted halfway:', streamErr);
-          streamInterrupted = true;
-        } finally {
-          if (activeStreamAbortController && activeStreamAbortController.signal === streamSignal) {
-            activeStreamAbortController = null;
-          }
-        }
-
-        if (streamSignal && streamSignal.aborted) {
-          console.log('[STREAM] Stream was cancelled, skipping save.');
-          return;
-        }
-
-        const perfOllamaDuration = (performance.now() - perfOllamaStart).toFixed(2);
-        console.log(`[PERF] main Ollama streaming generation: ${perfOllamaDuration} ms`);
-
-        // 10. When streaming completes, finalize Markdown rendering
-        if (accumulatedText.trim()) {
-          // Finalize Markdown
-          if (assistantMsgContainer && assistantMsgContainer.replyBody) {
-            assistantMsgContainer.replyBody.style.whiteSpace = '';
-            assistantMsgContainer.replyBody.innerHTML = renderMarkdown(accumulatedText);
-            kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
-          }
-
-          // Append to in-memory history
-          chatHistory.push({ role: 'assistant', content: accumulatedText });
-
-          // 11. Save the complete assistant response to Supabase ONCE
-          const perfAssistantDbStart = performance.now();
-          await userDbPromise;
-          await saveMessageRow('assistant', accumulatedText, targetChatId);
-          await touchChatUpdatedAt(targetChatId);
-          const totalDbDuration = ((performance.now() - perfAssistantDbStart) + (perfOllamaStart - perfDbUserStart)).toFixed(2);
-          console.log(`[PERF] database writes: ${totalDbDuration} ms`);
-
-          const perfTotalDuration = (performance.now() - perfReqStart).toFixed(2);
-          console.log(`[PERF] total request: ${perfTotalDuration} ms`);
-          console.log('[PERF] Ollama calls count for this request: 1');
-
-          // Trigger asynchronous background memory extraction (NON-BLOCKING & SMART-SKIPPED)
-          triggerBackgroundMemoryExtraction(cleanPrompt);
-        } else if (!streamInterrupted) {
           if (assistantMsgContainer) {
             assistantMsgContainer.row.remove();
-            assistantMsgContainer = null;
           }
-          renderErrorMessage("The model returned an empty response.");
-        }
-
-        // If streaming stopped halfway, keep whatever text was received and show a small generation error
-        if (streamInterrupted) {
-          if (assistantMsgContainer && assistantMsgContainer.bubble) {
-            const errDiv = document.createElement('div');
-            errDiv.className = 'error-bubble';
-            errDiv.style.marginTop = '8px';
-            errDiv.style.fontSize = '0.85rem';
-            errDiv.textContent = 'Generation was interrupted.';
-            assistantMsgContainer.bubble.appendChild(errDiv);
-            kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+          hideStopGenerationButton();
+          renderErrorMessage(errDetail || "Jerryy's AI could not start generation. Make sure Ollama is running.");
+          isProcessingMessage = false;
+          if (btnSendPrompt) btnSendPrompt.disabled = false;
+          if (kuramaInput) {
+            kuramaInput.disabled = false;
+            kuramaInput.focus();
           }
-        }
-
-      } catch (err) {
-        if (streamSignal && streamSignal.aborted) {
-          console.log('[STREAM] Stream aborted cleanly, ignoring error.');
           return;
         }
-        if (assistantMsgContainer && !accumulatedText) {
+
+        const jobData = await res.json();
+        const generationId = jobData.generation_id;
+
+        activeGenerations[targetChatId] = {
+          generationId: generationId,
+          chatId: targetChatId,
+          assistantContainer: assistantMsgContainer,
+          promptText: cleanPrompt,
+          startTime: Date.now()
+        };
+
+        startGenerationPolling(generationId, targetChatId);
+
+      } catch (err) {
+        if (assistantMsgContainer) {
           assistantMsgContainer.row.remove();
-          assistantMsgContainer = null;
         }
-        renderErrorMessage("Jerryy's AI could not connect to the local model. Make sure Ollama is running.");
-      } finally {
+        hideStopGenerationButton();
+        renderErrorMessage("Jerryy's AI could not connect to the backend server.");
         isProcessingMessage = false;
         if (btnSendPrompt) btnSendPrompt.disabled = false;
         if (kuramaInput) {
@@ -4711,19 +4883,21 @@
     window.handleUserPrompt = handleUserPrompt;
     window.loadChat = loadChat;
     window.handleNewChat = handleNewChat;
+    window.getCurrentChatId = () => currentChatId;
+    window.stopActiveGeneration = stopActiveGeneration;
+    window.stopGeneration = stopActiveGeneration;
+    window.abortActiveStream = stopActiveGeneration;
+    window.getActiveGenerations = () => activeGenerations;
+    window.checkAndAttachActiveGeneration = checkAndAttachActiveGeneration;
+
     window.addEventListener('beforeunload', () => {
-      if (activeStreamAbortController) {
-        try { activeStreamAbortController.abort(); } catch (_) {}
-        activeStreamAbortController = null;
+      // Do not abort backend generation; it continues generating and saving to Supabase.
+      for (const k in activeGenerations) {
+        if (activeGenerations[k]?.pollingInterval) {
+          clearInterval(activeGenerations[k].pollingInterval);
+        }
       }
     });
-
-    window.abortActiveStream = () => {
-      if (activeStreamAbortController) {
-        try { activeStreamAbortController.abort(); } catch (_) {}
-        activeStreamAbortController = null;
-      }
-    };
 
     window.loadUserMemories = loadUserMemories;
     window.saveUserMemory = saveUserMemory;
