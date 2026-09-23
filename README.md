@@ -83,8 +83,7 @@ Jerryy-s-AI/
 ├── index.html              # Standalone single-file frontend with Three.js & Jerryy's AI UI
 ├── frontend/
 │   ├── index.html          # Frontend app source with Supabase Auth & DB sync
-│   ├── chat.html           # Dedicated chat view
-│   └── overview.html       # 3D Earth overview and architecture page
+│   └── chat.html           # Dedicated chat view
 ├── backend/
 │   ├── main.py             # FastAPI backend server with CORS & endpoints
 │   ├── ollama_client.py    # Local Ollama client bridge

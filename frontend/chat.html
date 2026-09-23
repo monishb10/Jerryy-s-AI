@@ -2141,69 +2141,6 @@
       opacity: 1;
     }
 
-    /* Floating Overview Button in bottom-right corner */
-    .floating-overview-btn {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      z-index: 100;
-      display: inline-flex;
-      align-items: center;
-      gap: 9px;
-      padding: 10px 18px;
-      border-radius: 999px;
-      background: rgba(12, 16, 28, 0.88);
-      border: 1px solid rgba(93, 240, 168, 0.35);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      color: #ffffff;
-      font-family: var(--font-outfit);
-      font-size: 0.88rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-decoration: none;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(93, 240, 168, 0.15);
-      cursor: pointer;
-      transition: all 0.3s var(--ease-smooth);
-    }
-
-    .floating-overview-btn:hover {
-      background: rgba(16, 24, 42, 0.95);
-      border-color: #5df0a8;
-      box-shadow: 0 14px 38px rgba(0, 0, 0, 0.7), 0 0 30px rgba(93, 240, 168, 0.35);
-      transform: translateY(-2px);
-      color: #5df0a8;
-    }
-
-    .overview-pulse-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #5df0a8;
-      box-shadow: 0 0 10px #5df0a8;
-      animation: pulse-glow 2s infinite ease-in-out;
-    }
-
-    .modal-overview-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: rgba(93, 240, 168, 0.1);
-      border: 1px solid rgba(93, 240, 168, 0.28);
-      color: #5df0a8;
-      font-family: var(--font-outfit);
-      font-size: 0.8rem;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.2s var(--ease-smooth);
-    }
-    .modal-overview-link:hover {
-      background: rgba(93, 240, 168, 0.2);
-      border-color: #5df0a8;
-      transform: translateY(-1px);
-    }
 
     /* Responsive adjustments */
     @media (max-width: 860px) {
@@ -2275,14 +2212,6 @@
           <span>3D Canvas</span>
         </button>
 
-        <a href="overview.html" class="loopstack-nav-btn" aria-label="Open 3D Earth Overview" style="text-decoration: none; color: #ffffff;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5df0a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="M2 12h20"></path>
-            <path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20Z"></path>
-          </svg>
-          <span style="color: #ffffff;">3D Earth Overview</span>
-        </a>
       </div>
 
       <button id="kurama-status-toggle" class="kurama-status-badge" aria-label="Open Jerryy's AI Model">
@@ -2347,15 +2276,6 @@
       </video>
     </div>
 
-    <!-- Floating Overview Button pinned to bottom-right of chat page -->
-    <a href="overview.html" class="floating-overview-btn" id="btn-overview-page" aria-label="Platform Overview">
-      <span class="overview-pulse-dot"></span>
-      <span>Overview</span>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="7" y1="17" x2="17" y2="7"></line>
-        <polyline points="7 7 17 7 17 17"></polyline>
-      </svg>
-    </a>
 
     <!-- Custom cursor elements -->
     <div id="cursor-ring" class="cursor-ring-outline"></div>
@@ -2390,13 +2310,6 @@
             </svg>
             <span>New Chat</span>
           </button>
-          <a href="overview.html" class="modal-overview-link" title="Open Platform Overview">
-            <span>Overview</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="7" y1="17" x2="17" y2="7"></line>
-              <polyline points="7 7 17 7 17 17"></polyline>
-            </svg>
-          </a>
           <div id="ollama-status-badge" class="canvas-status" style="background: rgba(57,255,20,0.1); border-color: rgba(57,255,20,0.3); color: #39FF14;">
             <span class="badge-dot" style="background:#39FF14; box-shadow: 0 0 10px #39FF14; width:6px; height:6px; border-radius:50%;"></span>
             <span id="ollama-status-text">OLLAMA ONLINE</span>
