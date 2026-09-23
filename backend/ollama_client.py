@@ -83,6 +83,50 @@ async def check_ollama_health() -> Dict[str, Any]:
         }
 
 
+async def warmup_ollama() -> bool:
+    """
+    Warms up the jerryys-ai Ollama model automatically in the background.
+    - model: jerryys-ai
+    - think: false
+    - keep_alive: 30m
+    - prompt: Reply only with: OK
+    - non-blocking: called as a background startup task
+    - offline tolerance: logs a short warning without crashing
+    - isolated: not saved to chats, messages, or user memory
+    """
+    logger.info("[WARMUP] started")
+    t_start = time.perf_counter()
+
+    payload = {
+        "model": OLLAMA_MODEL,
+        "messages": [{"role": "user", "content": "Reply only with: OK"}],
+        "stream": False,
+        "think": False,
+        "keep_alive": OLLAMA_KEEP_ALIVE
+    }
+    url = f"{OLLAMA_URL}/api/chat"
+
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
+            resp = await client.post(url, json=payload)
+            if resp.status_code == 200:
+                elapsed = time.perf_counter() - t_start
+                logger.info(f"[WARMUP] completed in {elapsed:.2f} seconds")
+                return True
+            else:
+                logger.warning(f"[WARMUP] failed: HTTP {resp.status_code}")
+                return False
+    except httpx.ConnectError:
+        logger.warning("[WARMUP] failed: Ollama is offline or unreachable")
+        return False
+    except httpx.TimeoutException:
+        logger.warning(f"[WARMUP] failed: Request timed out after {TIMEOUT_SECONDS}s")
+        return False
+    except Exception as e:
+        logger.warning(f"[WARMUP] failed: {e}")
+        return False
+
+
 async def chat_with_ollama(messages: List[Dict[str, str]]) -> str:
     """
     Sends conversation messages to Ollama /api/chat endpoint.

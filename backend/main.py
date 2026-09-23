@@ -6,6 +6,8 @@ Connects the web frontend to local Ollama (jerryys-ai) model with chat profile s
 import os
 import time
 import logging
+import asyncio
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
@@ -23,6 +25,7 @@ from ollama_client import (
     extract_memories_with_ollama,
     extract_batch_memories_with_ollama,
     check_ollama_health,
+    warmup_ollama,
     OllamaConnectionError,
     OllamaModelNotFoundError,
     OllamaResponseError,
@@ -34,10 +37,19 @@ from chat_profiles import get_chat_profile
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("jerryys_ai")
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Run Ollama model warm-up as a background startup task without blocking FastAPI startup
+    asyncio.create_task(warmup_ollama())
+    yield
+
+
 app = FastAPI(
     title="Jerryy's AI — Local Learning & Exam Preparation Model",
     description="FastAPI service connecting to local Ollama instance running jerryys-ai model.",
-    version="2.1.0"
+    version="2.1.0",
+    lifespan=lifespan
 )
 
 # CORS configuration
