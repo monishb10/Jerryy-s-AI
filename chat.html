@@ -2979,6 +2979,7 @@
     let isLoadingChat = false;
     let currentProfile = 'default';
     let currentThinkingRow = null;
+    let activeStreamAbortController = null;
 
     // Memory Modal DOM Elements
     const btnOpenMemory = document.getElementById('btn-open-memory');
@@ -3193,6 +3194,10 @@
     // =========================================================
     async function loadChat(chatId) {
       if (!chatId || isLoadingChat) return;
+      if (activeStreamAbortController) {
+        try { activeStreamAbortController.abort(); } catch (_) {}
+        activeStreamAbortController = null;
+      }
       isLoadingChat = true;
 
       try {
@@ -3374,6 +3379,10 @@
     // =========================================================
     async function handleNewChat(focusInput = true) {
       if (!currentUser || !currentUser.id) return;
+      if (activeStreamAbortController) {
+        try { activeStreamAbortController.abort(); } catch (_) {}
+        activeStreamAbortController = null;
+      }
 
       clearMessageContainer();
       chatHistory = [];
@@ -3474,6 +3483,10 @@
 
       // If the deleted chat was currently open
       if (currentChatId === chatId) {
+        if (activeStreamAbortController) {
+          try { activeStreamAbortController.abort(); } catch (_) {}
+          activeStreamAbortController = null;
+        }
         clearMessageContainer();
         chatHistory = [];
         if (userChats.length > 0) {
@@ -3525,8 +3538,9 @@
       }
     }
 
-    async function saveMessageRow(role, content) {
-      if (!currentUser || !currentUser.id || !currentChatId) return;
+    async function saveMessageRow(role, content, targetChatId = null) {
+      const chatIdToUse = targetChatId || currentChatId;
+      if (!currentUser || !currentUser.id || !chatIdToUse) return;
 
       // 1. Try Supabase
       if (supabaseClient) {
@@ -3534,7 +3548,7 @@
           await supabaseClient
             .from('messages')
             .insert({
-              chat_id: currentChatId,
+              chat_id: chatIdToUse,
               user_id: currentUser.id,
               role: role,
               content: content
@@ -3545,7 +3559,7 @@
       }
 
       // 2. Save to isolated local chat messages
-      saveLocalChatMessage(currentUser.id, currentChatId, role, content);
+      saveLocalChatMessage(currentUser.id, chatIdToUse, role, content);
     }
 
     async function touchChatUpdatedAt(chatId) {
@@ -4134,6 +4148,10 @@
     // AUTH CHANGE COORDINATOR (PREVENTS CONCURRENT INITIALIZATION)
     // =========================================================
     async function handleAuthUserChange(user) {
+      if (activeStreamAbortController) {
+        try { activeStreamAbortController.abort(); } catch (_) {}
+        activeStreamAbortController = null;
+      }
       if (!user || !user.id) {
         currentAuthUserId = null;
         currentUser = null;
@@ -4466,39 +4484,56 @@
 
       let assistantMsgContainer = null;
       let accumulatedText = '';
+      let streamSignal = null;
 
       try {
         if (!currentChatId) {
           await handleNewChat(false);
         }
 
+        const targetChatId = currentChatId;
+
+        // Cancel any pending stream cleanly before starting a new one
+        if (activeStreamAbortController) {
+          try { activeStreamAbortController.abort(); } catch (_) {}
+          activeStreamAbortController = null;
+        }
+        activeStreamAbortController = new AbortController();
+        streamSignal = activeStreamAbortController.signal;
+
         if (kuramaEmptyState) kuramaEmptyState.style.display = 'none';
 
-        // 1. Render User Message ONCE (immediate UI feedback)
-        renderUserMessage(cleanPrompt, true);
-
-        // 2. History to send to Ollama (last 12 prior messages)
-        const historyToSend = chatHistory.slice(-12);
-
-        // 3. Append user message to in-memory history ONCE
+        // 1. Render user message in UI ONCE
+        renderUserMessage(cleanPrompt);
         chatHistory.push({ role: 'user', content: cleanPrompt });
+        kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
 
-        // 4. Instant memory check & deterministic extraction (0ms)
+        // 2. Build history payload (last 12 prior messages)
+        const historyToSend = chatHistory.slice(0, -1).slice(-12);
+
+        // 3. Clear user input
+        if (kuramaInput) kuramaInput.value = '';
+
+        // 4. Load account memory from local store
         const perfMemStart = performance.now();
-        const forgetIntent = checkInstantForget(cleanPrompt);
-        if (forgetIntent) {
-          if (forgetIntent.all) {
-            clearAllUserMemories(currentUser.id);
+        let userMemories = [];
+        if (currentUser && currentUser.id) {
+          const forgetIntent = checkInstantForget(cleanPrompt);
+          if (forgetIntent) {
+            if (forgetIntent.all) {
+              clearAllUserMemories(currentUser.id);
+            } else {
+              for (const fk of forgetIntent.keys) {
+                deleteUserMemory(currentUser.id, fk);
+              }
+            }
           } else {
-            for (const fk of forgetIntent.keys) {
-              deleteUserMemory(currentUser.id, fk);
+            const instantMems = extractInstantMemories(cleanPrompt);
+            for (const im of instantMems) {
+              saveUserMemory(currentUser.id, im.key, im.value, im.category);
             }
           }
-        } else {
-          const instantMems = extractInstantMemories(cleanPrompt);
-          for (const im of instantMems) {
-            saveUserMemory(currentUser.id, im.key, im.value, im.category);
-          }
+          userMemories = getLocalUserMemories(currentUser.id);
         }
         const perfMemDuration = (performance.now() - perfMemStart).toFixed(2);
         console.log(`[PERF] memory database load: ${perfMemDuration} ms`);
@@ -4507,9 +4542,9 @@
         const perfDbUserStart = performance.now();
         const userDbPromise = (async () => {
           try {
-            await updateChatTitleIfNew(currentChatId, cleanPrompt);
-            await saveMessageRow('user', cleanPrompt);
-            await touchChatUpdatedAt(currentChatId);
+            await updateChatTitleIfNew(targetChatId, cleanPrompt);
+            await saveMessageRow('user', cleanPrompt, targetChatId);
+            await touchChatUpdatedAt(targetChatId);
           } catch (dbErr) {
             console.warn('[DB] User message save background error:', dbErr);
           }
@@ -4526,7 +4561,7 @@
           return;
         }
 
-        // 7. Create one empty assistant message container
+        // 7. Create ONE empty assistant message container
         assistantMsgContainer = createStreamingAssistantMessage();
 
         // 8. Start /api/chat/stream with authenticated Bearer token and injected account memory
@@ -4539,6 +4574,7 @@
         let res = await fetch('/api/chat/stream', {
           method: 'POST',
           headers: chatHeaders,
+          signal: streamSignal,
           body: JSON.stringify({
             message: cleanPrompt,
             history: historyToSend,
@@ -4559,6 +4595,7 @@
                 res = await fetch('/api/chat/stream', {
                   method: 'POST',
                   headers: chatHeaders,
+                  signal: streamSignal,
                   body: JSON.stringify({
                     message: cleanPrompt,
                     history: historyToSend,
@@ -4619,24 +4656,44 @@
 
         try {
           while (true) {
+            if (streamSignal && streamSignal.aborted) break;
             const { done, value } = await reader.read();
             if (done) break;
             const textChunk = decoder.decode(value, { stream: true });
             if (textChunk) {
               accumulatedText += textChunk;
-              assistantMsgContainer.replyBody.textContent = accumulatedText;
-              kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+              if (assistantMsgContainer && assistantMsgContainer.replyBody) {
+                assistantMsgContainer.replyBody.textContent = accumulatedText;
+                kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+              }
             }
           }
-          const finalChunk = decoder.decode();
-          if (finalChunk) {
-            accumulatedText += finalChunk;
-            assistantMsgContainer.replyBody.textContent = accumulatedText;
-            kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+          if (!streamSignal || !streamSignal.aborted) {
+            const finalChunk = decoder.decode();
+            if (finalChunk) {
+              accumulatedText += finalChunk;
+              if (assistantMsgContainer && assistantMsgContainer.replyBody) {
+                assistantMsgContainer.replyBody.textContent = accumulatedText;
+                kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+              }
+            }
           }
         } catch (streamErr) {
+          if (streamSignal && streamSignal.aborted) {
+            console.log('[STREAM] Stream cleanly cancelled by user action.');
+            return;
+          }
           console.error('[STREAM] Streaming interrupted halfway:', streamErr);
           streamInterrupted = true;
+        } finally {
+          if (activeStreamAbortController && activeStreamAbortController.signal === streamSignal) {
+            activeStreamAbortController = null;
+          }
+        }
+
+        if (streamSignal && streamSignal.aborted) {
+          console.log('[STREAM] Stream was cancelled, skipping save.');
+          return;
         }
 
         const perfOllamaDuration = (performance.now() - perfOllamaStart).toFixed(2);
@@ -4645,9 +4702,11 @@
         // 10. When streaming completes, finalize Markdown rendering
         if (accumulatedText.trim()) {
           // Finalize Markdown
-          assistantMsgContainer.replyBody.style.whiteSpace = '';
-          assistantMsgContainer.replyBody.innerHTML = renderMarkdown(accumulatedText);
-          kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+          if (assistantMsgContainer && assistantMsgContainer.replyBody) {
+            assistantMsgContainer.replyBody.style.whiteSpace = '';
+            assistantMsgContainer.replyBody.innerHTML = renderMarkdown(accumulatedText);
+            kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+          }
 
           // Append to in-memory history
           chatHistory.push({ role: 'assistant', content: accumulatedText });
@@ -4655,8 +4714,8 @@
           // 11. Save the complete assistant response to Supabase ONCE
           const perfAssistantDbStart = performance.now();
           await userDbPromise;
-          await saveMessageRow('assistant', accumulatedText);
-          await touchChatUpdatedAt(currentChatId);
+          await saveMessageRow('assistant', accumulatedText, targetChatId);
+          await touchChatUpdatedAt(targetChatId);
           const totalDbDuration = ((performance.now() - perfAssistantDbStart) + (perfOllamaStart - perfDbUserStart)).toFixed(2);
           console.log(`[PERF] database writes: ${totalDbDuration} ms`);
 
@@ -4676,16 +4735,22 @@
 
         // If streaming stopped halfway, keep whatever text was received and show a small generation error
         if (streamInterrupted) {
-          const errDiv = document.createElement('div');
-          errDiv.className = 'error-bubble';
-          errDiv.style.marginTop = '8px';
-          errDiv.style.fontSize = '0.85rem';
-          errDiv.textContent = 'Generation was interrupted.';
-          assistantMsgContainer.bubble.appendChild(errDiv);
-          kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+          if (assistantMsgContainer && assistantMsgContainer.bubble) {
+            const errDiv = document.createElement('div');
+            errDiv.className = 'error-bubble';
+            errDiv.style.marginTop = '8px';
+            errDiv.style.fontSize = '0.85rem';
+            errDiv.textContent = 'Generation was interrupted.';
+            assistantMsgContainer.bubble.appendChild(errDiv);
+            kuramaChatBody.scrollTop = kuramaChatBody.scrollHeight;
+          }
         }
 
       } catch (err) {
+        if (streamSignal && streamSignal.aborted) {
+          console.log('[STREAM] Stream aborted cleanly, ignoring error.');
+          return;
+        }
         if (assistantMsgContainer && !accumulatedText) {
           assistantMsgContainer.row.remove();
           assistantMsgContainer = null;
@@ -4733,6 +4798,20 @@
     window.handleUserPrompt = handleUserPrompt;
     window.loadChat = loadChat;
     window.handleNewChat = handleNewChat;
+    window.addEventListener('beforeunload', () => {
+      if (activeStreamAbortController) {
+        try { activeStreamAbortController.abort(); } catch (_) {}
+        activeStreamAbortController = null;
+      }
+    });
+
+    window.abortActiveStream = () => {
+      if (activeStreamAbortController) {
+        try { activeStreamAbortController.abort(); } catch (_) {}
+        activeStreamAbortController = null;
+      }
+    };
+
     window.loadUserMemories = loadUserMemories;
     window.saveUserMemory = saveUserMemory;
     window.deleteUserMemory = deleteUserMemory;
