@@ -28,13 +28,15 @@ class GenerationJob:
     asyncio_task: Optional[asyncio.Task] = None
 
     def to_dict(self) -> Dict[str, Any]:
+        is_done = self.status in ("complete", "stopped")
+        full_text = self.partial_content if is_done else ""
         return {
             "generation_id": self.id,
             "chat_id": self.chat_id,
             "user_id": self.user_id,
             "status": self.status,
-            "content": self.partial_content,
-            "partial_content": self.partial_content,
+            "content": full_text,
+            "partial_content": full_text,
             "error": self.error,
             "created_at": self.created_at,
             "updated_at": self.updated_at
