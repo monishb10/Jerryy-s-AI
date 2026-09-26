@@ -118,6 +118,7 @@ let toastTimer;function showToast(text){const node=document.getElementById("toas
     if (btnGetStarted) {
       btnGetStarted.addEventListener('click', (e) => {
         e.preventDefault();
+        try { sessionStorage.removeItem('loopstackReady'); } catch (_) {}
         window.location.href = '/chat';
       });
     }

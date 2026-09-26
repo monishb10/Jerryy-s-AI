@@ -93,7 +93,7 @@ input.addEventListener('input',()=>{input.style.height='auto';input.style.height
 $('btn-stop-generation').addEventListener('click',async()=>{const job=state.job;if(!active(job)||job.stop_requested)return;job.stop_requested=true;renderStatus();try{const updated=await api('/generations/'+job.generation_id+'/stop',{method:'POST'});if(state.chat===updated.chat_id){state.job=updated;if(!active(updated))await loadChat(updated.chat_id,{quiet:true});else renderStatus();}}catch(e){job.stop_requested=false;renderStatus();showError(e);}});
 for(const id of ['btn-new-chat','btn-sidebar-new-chat'])$(id).addEventListener('click',()=>newChat().catch(showError));
 $('btn-sidebar-toggle').addEventListener('click',()=>$('chat-sidebar').classList.toggle('open'));
-$('btn-close-kurama').addEventListener('click',()=>{window.location.href='/';});
+$('btn-close-kurama').addEventListener('click',()=>{const m=$('kurama-modal');if(m)m.classList.remove('open');if(window.location.hash==='#chat'){try{history.pushState(null,'',window.location.pathname);}catch{}}});
 $('btn-logout').addEventListener('click',()=>logout().catch(showError));
 $('chat-search').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>loadChats().catch(showError),220);});
 document.querySelectorAll('.kurama-chip').forEach(b=>b.addEventListener('click',()=>{input.value=b.dataset.prompt;input.focus();}));
