@@ -44,3 +44,10 @@ ENV/
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+.env.*
+!.env.example
+node_modules/
+.pytest_cache/
+test-results/
+*.log

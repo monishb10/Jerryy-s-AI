@@ -1,0 +1,12 @@
+{
+  "chat.html": {
+    "inline_styles_identical": true,
+    "photo_video_urls_preserved": true,
+    "visual_engine_preserved": true
+  },
+  "index.html": {
+    "inline_styles_identical": true,
+    "photo_video_urls_preserved": true,
+    "visual_engine_preserved": true
+  }
+}

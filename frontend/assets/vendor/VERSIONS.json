@@ -1,0 +1,6 @@
+{
+  "marked": "18.0.14",
+  "dompurify": "3.4.16",
+  "@supabase/supabase-js": "2.117.1",
+  "highlight.js": "11.12.0"
+}

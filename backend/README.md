@@ -1,27 +1,13 @@
-# Jerryy's AI — Backend Engine
+# Backend
 
-FastAPI backend providing curriculum intelligence, reasoning, and color synthesis for **Jerryy's AI Exam Preparation Model**.
+Use the complete setup, SQL and platform-specific commands in `../README.md`.
 
-## Setup & Running
+`main.py` serves the original pages and includes modular APIs. `auth.py` verifies Supabase sessions; `database.py` wraps REST/RPC; `chat.py` owns private chat/message/job/memory routes; `generation_manager.py` runs a leased FIFO worker; `ollama_client.py` contains local model transport and preserved memory extraction; `context.py` bounds model context; `memory.py` manages facts; `attachments.py` validates/extracts files and manages private Storage; `config.py` reads server environment variables.
 
-1. Create and activate a Python virtual environment:
-```powershell
-cd backend
-python -m venv .venv
-.venv\Scripts\activate
-```
+Public: `GET /api/config` (publishable configuration only), `GET /api/health`.
 
-2. Install dependencies:
-```powershell
-pip install -r requirements.txt
-```
+Authenticated: chat list/create/load/rename/delete; `/api/generations` create/status/stop; `/api/chats/{id}/generation`; `/api/memories` view/delete/clear/rescan; `/api/chats/{id}/attachments` upload; `/api/attachments/{id}` delete draft; `/api/attachments/{id}/content` private download.
 
-3. Launch server:
-```powershell
-uvicorn main:app --reload --port 8000
-```
+Every private route derives identity from verified Supabase access tokens. Clients cannot supply `user_id`. Background service-role database writes use ownership-scoped queries and transactional service-only functions. Authenticated database clients have owner-only SELECT grants; mutations pass through FastAPI. Database RLS is always enabled.
 
-4. Access API:
-- Health check: `http://localhost:8000/api/health`
-- Chat endpoint: `POST http://localhost:8000/api/chat`
-- Web Application: `http://localhost:8000/`
+Do not use removed `/api/chat`, token streaming, direct client message inserts, or the legacy `test-token-*` bypass. Error details are bounded, and timing logs exclude prompts, memory contents and tokens.
