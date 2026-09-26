@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
   <meta charset="UTF-8" />
   <title>Jerryy's AI — Local AI Assistant</title>
 
@@ -32,7 +29,7 @@
 
   <style>
     /* =========================================================
-       GLOBAL STYLES & TOKENS
+       GLOBAL RESET & TOKENS
        ========================================================= */
     :root {
       --font-playfair: 'Playfair Display', Georgia, serif;
@@ -405,12 +402,12 @@
     }
 
     .landing-user-avatar {
-      width: 96px;
-      height: 96px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
       object-fit: cover;
-      border: 3.5px solid #ffffff;
-      box-shadow: 0 0 0 1px rgba(110, 168, 90, 0.35), 0 12px 32px rgba(110, 168, 90, 0.28);
+      border: 3px solid #ffffff;
+      box-shadow: 0 0 0 1px rgba(110, 168, 90, 0.25), 0 8px 24px rgba(110, 168, 90, 0.22);
       background: #eff8eb;
       transition: transform 0.3s var(--ease-smooth), box-shadow 0.3s var(--ease-smooth);
     }
@@ -489,8 +486,8 @@
         margin-bottom: 16px;
       }
       .landing-user-avatar {
-        width: 84px;
-        height: 84px;
+        width: 72px;
+        height: 72px;
       }
       .btn-get-started {
         padding: 0.95rem 2rem;
@@ -1545,6 +1542,105 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    .landing-subtitle {
+      font-family: var(--font-raleway);
+      font-size: clamp(1.1rem, 2.2vw, 1.45rem);
+      font-weight: 700;
+      color: #1848d6;
+      letter-spacing: -0.01em;
+      margin-top: -6px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .btn-google-landing {
+      background: #ffffff !important;
+      color: #1f2937 !important;
+      border: 1px solid rgba(0, 0, 0, 0.12) !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    .btn-google-landing:hover {
+      background: #f8fafc !important;
+      color: #111827 !important;
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14) !important;
+    }
+
+    .landing-user-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 16px 6px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 6px 18px rgba(25, 45, 95, 0.08);
+      margin-bottom: 16px;
+    }
+
+    .landing-user-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #ffffff;
+      box-shadow: 0 0 0 1.5px rgba(110, 168, 90, 0.3), 0 8px 24px rgba(110, 168, 90, 0.22);
+      background: #eff8eb;
+    }
+
+    .hero-actions-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hero-logout-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px solid rgba(220, 38, 38, 0.25);
+      color: #dc2626;
+      font-family: var(--font-raleway);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      transition: all 0.25s var(--ease-smooth);
+      margin-top: 6px;
+    }
+
+    .hero-logout-btn:hover {
+      background: rgba(254, 226, 226, 0.75);
+      border-color: rgba(220, 38, 38, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .hero-spinner-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px 0 6px;
+    }
+
+    .hero-spinner {
+      width: 30px;
+      height: 30px;
+      border: 3px solid rgba(47, 105, 255, 0.2);
+      border-top-color: #2F69FF;
+      border-radius: 50%;
+      animation: hero-spin 0.8s linear infinite;
+    }
+
+    @keyframes hero-spin {
+      to { transform: rotate(360deg); }
+    }
+
     /* User Profile Header Bar */
     .user-profile-bar {
       display: flex;
@@ -2374,7 +2470,18 @@
       updateFrustumBounds();
     });
 
-
+    const btnCanvasReset = document.getElementById('btn-canvas-reset');
+    if (btnCanvasReset) {
+      btnCanvasReset.addEventListener('click', () => {
+        paletteTarget.dark.set("#6EA85A");
+        paletteTarget.medium.set("#9FC98E");
+        paletteTarget.light.set("#C8DEBA");
+        paletteTarget.pearl.set("#FFFFFF");
+        paletteTarget.mint.set("#EFF8EB");
+        bgGradient.style.background = "radial-gradient(circle at center, #FFFFFF 0%, #F5FAF2 45%, #EAF5E5 100%)";
+        showToast("3D Palette Reset");
+      });
+    }
 
     // =========================================================
     // LOOPSTACK LOGIC: REVEALS + CUSTOM CURSOR (VERBATIM)

@@ -2805,7 +2805,18 @@
       updateFrustumBounds();
     });
 
-
+    const btnCanvasReset = document.getElementById('btn-canvas-reset');
+    if (btnCanvasReset) {
+      btnCanvasReset.addEventListener('click', () => {
+        paletteTarget.dark.set("#6EA85A");
+        paletteTarget.medium.set("#9FC98E");
+        paletteTarget.light.set("#C8DEBA");
+        paletteTarget.pearl.set("#FFFFFF");
+        paletteTarget.mint.set("#EFF8EB");
+        bgGradient.style.background = "radial-gradient(circle at center, #FFFFFF 0%, #F5FAF2 45%, #EAF5E5 100%)";
+        showToast("3D Palette Reset");
+      });
+    }
 
     // =========================================================
     // LOOPSTACK LOGIC: REVEALS + CUSTOM CURSOR (VERBATIM)
