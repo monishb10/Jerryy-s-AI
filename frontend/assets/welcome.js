@@ -40,7 +40,7 @@ let toastTimer;function showToast(text){const node=document.getElementById("toas
       }
       if (!firstName) firstName = 'User';
 
-      const avatarUrl = meta.avatar_url || meta.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName)}&background=5F9E50&color=fff`;
+      const avatarUrl = meta.avatar_url || meta.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName)}&background=4834D4&color=fff`;
 
       return { firstName, fullName, email, avatarUrl };
     }
