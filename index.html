@@ -2175,26 +2175,23 @@
     }
 
     // Handle back/forward browser history
-    window.addEventListener('popstate', (e) => {
-      const params = new URLSearchParams(window.location.search);
-      const isChatUrl = params.get('chat') === 'open' || params.get('chat') === 'true' || (e.state && e.state.chat);
-      if (isChatUrl) {
-        if (currentUser) {
-          openKuramaModal(false);
-        } else {
-          closeKuramaModal(false);
-          window.history.replaceState(null, '', window.location.pathname);
-        }
-      } else {
-        closeKuramaModal(false);
-      }
-
+    window.addEventListener('popstate', () => {
       if (window.location.hash === '#loopstack') {
         switchView('loopstack');
       } else {
         switchView('canvas');
       }
     });
+
+    // Clean up any legacy query params or hashes from landing URL
+    if (window.location.search.includes('chat=')) {
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete('chat');
+      window.history.replaceState(null, '', cleanUrl.pathname + (cleanUrl.search ? cleanUrl.search : '') + (cleanUrl.hash !== '#chat' ? cleanUrl.hash : ''));
+    }
+    if (window.location.hash === '#chat') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
 
     // Check initial hash
     if (window.location.hash === '#loopstack') {

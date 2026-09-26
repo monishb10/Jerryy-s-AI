@@ -114,14 +114,10 @@ let toastTimer;function showToast(text){const node=document.getElementById("toas
 
     if (btnHeroLogout) btnHeroLogout.addEventListener('click', handleLogout);
 
-    // EXPLORE MODEL: Navigate to separate /chat page
+    // EXPLORE MODEL: Navigate directly to /chat route
     if (btnGetStarted) {
       btnGetStarted.addEventListener('click', (e) => {
         e.preventDefault();
-        if (!currentUser) {
-          showLoginScreen();
-          return;
-        }
         window.location.href = '/chat';
       });
     }

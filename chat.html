@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+    // Auth Protection: redirect to / if not authenticated
+    (function() {
+      try {
+        var hasSession = false;
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k && (k.startsWith('sb-') || k.indexOf('supabase.auth.token') !== -1) && k.endsWith('-auth-token')) {
+            var v = localStorage.getItem(k);
+            if (v && v.indexOf('access_token') !== -1) {
+              hasSession = true;
+              break;
+            }
+          }
+        }
+        if (!hasSession) {
+          window.location.replace('/');
+        }
+      } catch (_) {}
+    })();
+  </script>
+
   <meta charset="UTF-8" />
   <title>Jerryy's AI — Local AI Assistant</title>
 
@@ -2521,7 +2543,7 @@
     }
 
     if (btnBackToCanvas) {
-      btnBackToCanvas.addEventListener('click', () => switchView('canvas'));
+      btnBackToCanvas.addEventListener('click', () => { window.location.href = '/'; });
     }
 
     // Handle back/forward browser history
