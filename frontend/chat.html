@@ -31,6 +31,167 @@
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
     @import url('https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Raleway:wght@300;400;500;600;700;800;900&display=swap');
+  
+    /* =========================================================
+       CHAT INTRO / TRANSITION SCREEN (GREEN BRAND IDENTITY)
+       ========================================================= */
+    #chat-intro {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      background: radial-gradient(circle at center, #FFFFFF 0%, #F5FAF2 45%, #EAF5E5 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.4s;
+    }
+
+    #chat-intro.intro-fade-out {
+      opacity: 0;
+    }
+
+    #chat-intro.intro-done {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    /* Ambient soft green floating spheres */
+    .intro-ambient-sphere {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(52px);
+      pointer-events: none;
+      opacity: 0.65;
+      animation: introOrbFloat 4.5s ease-in-out infinite alternate;
+    }
+
+    .intro-ambient-sphere.s1 {
+      width: 340px;
+      height: 340px;
+      background: rgba(110, 168, 90, 0.24);
+      top: 15%;
+      left: 8%;
+    }
+
+    .intro-ambient-sphere.s2 {
+      width: 440px;
+      height: 440px;
+      background: rgba(159, 201, 142, 0.28);
+      bottom: 10%;
+      right: 10%;
+      animation-delay: -2.2s;
+    }
+
+    .intro-ambient-sphere.s3 {
+      width: 260px;
+      height: 260px;
+      background: rgba(200, 222, 186, 0.32);
+      top: 48%;
+      left: 58%;
+      animation-delay: -1.1s;
+    }
+
+    @keyframes introOrbFloat {
+      0% { transform: translateY(0) scale(1); }
+      100% { transform: translateY(-26px) scale(1.08); }
+    }
+
+    .intro-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0 24px;
+      max-width: 100vw;
+      overflow: hidden;
+    }
+
+    .intro-logo-badge {
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: introLogoFade 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes introLogoFade {
+      0% { opacity: 0; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .intro-track {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: visible;
+    }
+
+    /* Jerryy's AI large typography animating LEFT -> RIGHT */
+    .intro-brand {
+      font-family: var(--font-playfair), 'Playfair Display', Georgia, serif;
+      font-size: clamp(2.6rem, 7.5vw, 5.8rem);
+      font-weight: 800;
+      color: #1e3a17;
+      letter-spacing: -0.025em;
+      white-space: nowrap;
+      margin: 0;
+      line-height: 1.1;
+      text-shadow: 0 4px 28px rgba(110, 168, 90, 0.22);
+      animation: introSlideLeftToRight 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      will-change: transform, opacity;
+    }
+
+    @keyframes introSlideLeftToRight {
+      0% {
+        opacity: 0;
+        transform: translateX(-120vw);
+      }
+      20% {
+        opacity: 0.95;
+      }
+      100% {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .intro-tagline {
+      font-family: var(--font-raleway), -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: clamp(0.92rem, 2.2vw, 1.18rem);
+      font-weight: 600;
+      color: #4a753b;
+      letter-spacing: 0.04em;
+      margin-top: 16px;
+      opacity: 0;
+      animation: introTaglineFade 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.65s forwards;
+    }
+
+    @keyframes introTaglineFade {
+      0% { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 0.92; transform: translateY(0); }
+    }
+
+    /* Container for existing chat app during transition */
+    #chat-app {
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1), transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    #chat-app.chat-ready {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
 
   <!-- Three.js CDN Import Map for 3D Spheres WebGL -->
@@ -2220,6 +2381,38 @@
 <body>
 
   <!-- =========================================================
+       FULLSCREEN CHAT INTRO / TRANSITION SCREEN (LEFT -> RIGHT)
+       ========================================================= -->
+  <div id="chat-intro" class="chat-intro-screen" aria-label="Loading Jerryy's AI">
+    <div class="intro-ambient-sphere s1"></div>
+    <div class="intro-ambient-sphere s2"></div>
+    <div class="intro-ambient-sphere s3"></div>
+
+    <div class="intro-content">
+      <div class="intro-logo-badge">
+        <svg class="jerryys-logo-svg" viewBox="0 0 100 100" width="88" height="88" aria-label="Jerryy's AI Logo">
+          <g style="mix-blend-mode: multiply;">
+            <circle cx="50" cy="38" r="24" fill="#6EA85A" fill-opacity="0.88" />
+            <circle cx="37" cy="62" r="24" fill="#9FC98E" fill-opacity="0.88" />
+            <circle cx="63" cy="62" r="24" fill="#C8DEBA" fill-opacity="0.88" />
+          </g>
+        </svg>
+      </div>
+
+      <div class="intro-track">
+        <h1 class="intro-brand">Jerryy's AI</h1>
+      </div>
+
+      <p class="intro-tagline">Initializing your local intelligent assistant...</p>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       COMPLETE EXISTING CHAT APPLICATION
+       ========================================================= -->
+  <div id="chat-app" class="chat-app-container">
+
+  <!-- =========================================================
        VIEW 1: 3D SPHERE FIELD (LANDING / HERO CANVAS)
        ========================================================= -->
   <div id="view-canvas" class="view-container active-view">
@@ -2497,6 +2690,8 @@
   <!-- =========================================================
        MODULE LOGIC: THREE.JS + LOOPSTACK + JERRYY'S AI ENGINE
        ========================================================= -->
+  </div>
+
   <script type="module">
     import * as THREE from 'three';
 
@@ -2954,5 +3149,24 @@
 
   </script>
   <script type="module" src="/assets/chat.js"></script>
+  <script>
+    // Intro Transition Controller (Timeline: 2.3s total)
+    (function() {
+      const intro = document.getElementById('chat-intro');
+      const chatApp = document.getElementById('chat-app');
+      if (!intro || !chatApp) return;
+
+      // 1.9s: Intro begins smooth fade-out
+      setTimeout(function() {
+        intro.classList.add('intro-fade-out');
+      }, 1900);
+
+      // 2.3s: Intro completes, reveal chat interface
+      setTimeout(function() {
+        intro.classList.add('intro-done');
+        chatApp.classList.add('chat-ready');
+      }, 2300);
+    })();
+  </script>
 </body>
 </html>
