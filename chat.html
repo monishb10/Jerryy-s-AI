@@ -650,9 +650,9 @@
       position: fixed;
       inset: 0;
       z-index: 1000;
-      background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      background: rgba(8, 6, 16, 0.65);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -670,17 +670,21 @@
     }
 
     .kurama-modal-card {
-      width: min(1060px, calc(100vw - 32px));
-      height: min(86vh, 840px);
-      border-radius: 28px;
-      background: rgba(12, 13, 18, 0.88);
+      width: min(1080px, calc(100vw - 32px));
+      height: min(88vh, 850px);
+      border-radius: 24px;
+      position: relative;
+      background-image: linear-gradient(rgba(14, 10, 26, 0.48), rgba(10, 8, 20, 0.58)), url('/assets/chat-bg.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
       border: 1px solid rgba(255, 255, 255, 0.16);
       box-shadow:
-        0 30px 100px rgba(0, 0, 0, 0.9),
-        0 0 40px rgba(57, 255, 20, 0.12),
-        inset 0 1px 0 rgba(255, 255, 255, 0.18);
-      backdrop-filter: blur(32px) saturate(180%);
-      -webkit-backdrop-filter: blur(32px) saturate(180%);
+        0 30px 100px rgba(0, 0, 0, 0.85),
+        0 0 50px rgba(147, 95, 240, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.22);
+      backdrop-filter: blur(28px) saturate(140%);
+      -webkit-backdrop-filter: blur(28px) saturate(140%);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -700,13 +704,17 @@
       min-height: 0;
       overflow: hidden;
       position: relative;
+      width: 100%;
+      height: 100%;
     }
 
     .chat-sidebar {
-      width: 250px;
+      width: 260px;
       flex-shrink: 0;
-      background: rgba(9, 11, 15, 0.75);
-      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(12, 9, 22, 0.45);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -714,11 +722,35 @@
     }
 
     .chat-sidebar-header {
-      padding: 14px 14px 10px;
+      padding: 16px 14px 12px;
       display: flex;
       flex-direction: column;
       gap: 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .chat-sidebar-branding {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 2px 4px 6px;
+    }
+
+    .chat-sidebar-logo {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      object-fit: cover;
+      filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.45));
+    }
+
+    .chat-sidebar-title {
+      font-family: var(--font-general);
+      font-size: 14.5px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: #ffffff;
+      text-transform: uppercase;
     }
 
     .btn-sidebar-new-chat {
@@ -729,11 +761,11 @@
       gap: 8px;
       padding: 10px 14px;
       border-radius: 12px;
-      background: rgba(47, 105, 255, 0.16);
-      border: 1px solid rgba(47, 105, 255, 0.4);
+      background: rgba(147, 95, 240, 0.22);
+      border: 1px solid rgba(192, 132, 252, 0.38);
       color: #ffffff;
       font-family: var(--font-general);
-      font-size: 12.5px;
+      font-size: 13px;
       font-weight: 600;
       letter-spacing: 0.02em;
       cursor: pointer;
@@ -741,9 +773,9 @@
     }
 
     .btn-sidebar-new-chat:hover {
-      background: rgba(47, 105, 255, 0.3);
-      border-color: rgba(47, 105, 255, 0.7);
-      box-shadow: 0 0 16px rgba(47, 105, 255, 0.35);
+      background: rgba(147, 95, 240, 0.38);
+      border-color: rgba(192, 132, 252, 0.65);
+      box-shadow: 0 0 18px rgba(168, 85, 247, 0.35);
       transform: translateY(-1px);
     }
 
@@ -752,9 +784,9 @@
       font-size: 10.5px;
       font-weight: 600;
       letter-spacing: 0.12em;
-      color: rgba(255, 255, 255, 0.4);
+      color: rgba(255, 255, 255, 0.45);
       text-transform: uppercase;
-      padding: 0 2px;
+      padding: 2px 2px 0 2px;
     }
 
     .chat-history-list {
@@ -872,6 +904,43 @@
       min-width: 0;
       min-height: 0;
       overflow: hidden;
+      position: relative;
+    }
+
+    .chat-main-header {
+      padding: 14px 20px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: transparent;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .chat-main-header-spacer {
+      flex: 1;
+    }
+
+    .btn-close-modal {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+      transition: all 0.25s var(--ease-smooth);
+    }
+
+    .btn-close-modal:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.35);
+      transform: scale(1.08);
     }
 
     .btn-sidebar-toggle {
@@ -902,82 +971,17 @@
         top: 0;
         bottom: 0;
         left: 0;
-        z-index: 25;
-        width: 260px;
-        background: rgba(10, 12, 18, 0.97);
+        z-index: 30;
+        width: 270px;
+        background: rgba(14, 11, 26, 0.95);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
         box-shadow: 10px 0 35px rgba(0, 0, 0, 0.85);
         transform: translateX(-100%);
       }
       .chat-sidebar.open {
         transform: translateX(0);
       }
-    }
-
-    .kurama-modal-header {
-      padding: 18px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(255, 255, 255, 0.03);
-    }
-
-    .kurama-modal-title {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .kurama-mini-orb {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #39FF14 0%, #0e8c05 45%, #053302 90%);
-      box-shadow: 0 0 16px rgba(57, 255, 20, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.6);
-    }
-
-    .kurama-title-text {
-      font-family: var(--font-general);
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      color: #ffffff;
-      text-transform: uppercase;
-    }
-
-    .kurama-sub-text {
-      font-family: var(--font-outfit);
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.14em;
-      color: rgba(255, 255, 255, 0.45);
-      text-transform: uppercase;
-    }
-
-    .modal-header-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .btn-close-modal {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 18px;
-      transition: all 0.25s var(--ease-smooth);
-    }
-
-    .btn-close-modal:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: scale(1.08);
     }
 
     /* Modal Chat Messages Body */
@@ -1010,7 +1014,7 @@
       font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.2em;
-      color: #39FF14;
+      color: #c084fc;
       text-transform: uppercase;
       margin-bottom: 12px;
     }
@@ -1027,7 +1031,7 @@
     .kurama-empty-sub {
       font-family: var(--font-outfit);
       font-size: 0.95rem;
-      color: rgba(255, 255, 255, 0.6);
+      color: rgba(255, 255, 255, 0.65);
       margin-bottom: 24px;
     }
 
@@ -1040,8 +1044,8 @@
     }
 
     .kurama-chip {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.16);
       color: #ffffff;
       padding: 8px 16px;
       border-radius: 999px;
@@ -1053,17 +1057,19 @@
     }
 
     .kurama-chip:hover {
-      background: rgba(57, 255, 20, 0.12);
-      border-color: #39FF14;
-      color: #39FF14;
+      background: rgba(168, 85, 247, 0.22);
+      border-color: rgba(192, 132, 252, 0.6);
+      color: #ffffff;
       transform: translateY(-2px);
     }
 
     /* Chat Messages Rows */
     .chat-row {
       display: flex;
-      flex-direction: column;
-      animation: msg-appear 0.4s var(--ease-smooth);
+      align-items: flex-start;
+      gap: 12px;
+      animation: msg-appear 0.35s var(--ease-smooth);
+      width: 100%;
     }
 
     @keyframes msg-appear {
@@ -1072,38 +1078,81 @@
     }
 
     .chat-row.user {
-      align-items: flex-end;
+      flex-direction: row;
+      justify-content: flex-end;
     }
 
     .chat-row.bot {
-      align-items: flex-start;
+      flex-direction: row;
+      justify-content: flex-start;
+    }
+
+    .chat-msg-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .chat-msg-avatar.bot-avatar {
+      background: rgba(255, 255, 255, 0.05);
+      box-shadow: 0 0 14px rgba(168, 85, 247, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .chat-msg-avatar.user-avatar {
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+      border: 1.5px solid rgba(255, 255, 255, 0.28);
     }
 
     .chat-bubble-user {
-      max-width: 80%;
-      background: rgba(255, 255, 255, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.25);
+      max-width: min(74%, 660px);
+      background: rgba(147, 95, 240, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       padding: 12px 18px;
       border-radius: 18px 18px 4px 18px;
       color: #ffffff;
       font-family: var(--font-outfit);
       font-size: 0.95rem;
       line-height: 1.5;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
     }
 
     .chat-bubble-bot {
-      max-width: 92%;
+      max-width: min(86%, 760px);
       min-width: 0;
       word-break: break-word;
       overflow-wrap: break-word;
-      background: rgba(20, 22, 30, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      padding: 20px;
+      background: rgba(22, 17, 38, 0.58);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 18px 20px;
       border-radius: 18px 18px 18px 4px;
-      color: #ffffff;
+      color: #f1f5f9;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.32);
+    }
+
+    .thinking-bubble {
+      background: rgba(22, 17, 38, 0.58);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 12px 18px;
+      border-radius: 18px 18px 18px 4px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: rgba(255, 255, 255, 0.85);
+      font-family: var(--font-outfit);
+      font-size: 0.9rem;
     }
 
     .bot-reply-text {
@@ -1904,9 +1953,11 @@
 
     /* Chat Input Bar */
     .kurama-modal-footer {
-      padding: 16px 24px 20px;
+      padding: 14px 24px 20px;
       border-top: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(10, 10, 14, 0.95);
+      background: rgba(14, 10, 26, 0.48);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
     }
 
     .kurama-input-form {
@@ -1914,15 +1965,44 @@
       gap: 12px;
       align-items: center;
       background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.16);
       border-radius: 999px;
-      padding: 6px 8px 6px 20px;
+      padding: 6px 8px 6px 14px;
       transition: border-color 0.3s var(--ease-smooth), box-shadow 0.3s var(--ease-smooth);
     }
 
     .kurama-input-form:focus-within {
-      border-color: #39FF14;
-      box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
+      border-color: rgba(192, 132, 252, 0.6);
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.25);
+    }
+
+    .btn-attach {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+      border-radius: 50%;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      padding: 0;
+    }
+
+    .btn-attach:hover {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.35);
+      transform: scale(1.05);
+    }
+
+    .btn-attach:disabled {
+      opacity: 0.4;
+      cursor: default;
     }
 
     .kurama-text-input {
@@ -1940,26 +2020,28 @@
     }
 
     .kurama-text-input::placeholder {
-      color: rgba(255, 255, 255, 0.38);
+      color: rgba(255, 255, 255, 0.4);
     }
 
     .btn-send-prompt {
-      width: 42px;
-      height: 42px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
-      background: #39FF14;
+      background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
       border: none;
-      color: #000000;
+      color: #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       transition: all 0.25s var(--ease-smooth);
+      box-shadow: 0 0 16px rgba(168, 85, 247, 0.45);
+      flex-shrink: 0;
     }
 
     .btn-send-prompt:hover {
       transform: scale(1.08);
-      box-shadow: 0 0 15px rgba(57, 255, 20, 0.6);
+      box-shadow: 0 0 24px rgba(168, 85, 247, 0.7);
     }
 
     .btn-stop-generation {
@@ -2121,71 +2203,15 @@
        ========================================================= -->
   <div id="kurama-modal" class="kurama-modal-overlay">
     <div class="kurama-modal-card">
-      <!-- Header -->
-      <div class="kurama-modal-header">
-        <div class="kurama-modal-title">
-          <button id="btn-sidebar-toggle" class="btn-sidebar-toggle" type="button" aria-label="Toggle chat history" title="Toggle chat history">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="3" y1="12" x2="21" y2="12"></line>
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <line x1="3" y1="18" x2="21" y2="18"></line>
-            </svg>
-          </button>
-          <div class="kurama-mini-orb"></div>
-          <div>
-            <div class="kurama-title-text">Jerryy's AI</div>
-            <div class="kurama-sub-text">LOCAL AI ASSISTANT</div>
-          </div>
-        </div>
-        <div class="modal-header-actions">
-          <button id="btn-new-chat" class="btn-new-chat" title="Start a New Conversation" aria-label="New Chat">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            <span>New Chat</span>
-          </button>
-          <div id="ollama-status-badge" class="canvas-status" style="background: rgba(57,255,20,0.1); border-color: rgba(57,255,20,0.3); color: #39FF14;">
-            <span class="badge-dot" style="background:#39FF14; box-shadow: 0 0 10px #39FF14; width:6px; height:6px; border-radius:50%;"></span>
-            <span id="ollama-status-text">OLLAMA ONLINE</span>
-          </div>
-          <button id="btn-close-kurama" class="btn-close-modal" aria-label="Close Jerryy's AI Dialog">×</button>
-        </div>
-      </div>
-
-      <!-- Logged-in User Profile Bar -->
-      <div class="user-profile-bar" id="user-profile-bar" style="display: none;">
-        <div class="user-profile-info">
-          <img id="user-avatar" class="user-avatar" src="" alt="Google Profile Picture">
-          <div class="user-details">
-            <span id="user-name" class="user-name">User</span>
-            <span id="user-email" class="user-email">user@example.com</span>
-          </div>
-        </div>
-        <div class="user-profile-actions" style="display: flex; align-items: center; gap: 8px;">
-          <button id="btn-open-memory" class="btn-memory" type="button" aria-label="Personal Memory">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2a5 5 0 0 1 5 5v1h1a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-8a3 3 0 0 1 3-3h1V7a5 5 0 0 1 5-5z"></path>
-            </svg>
-            <span>Memory</span>
-          </button>
-          <button id="btn-logout" class="btn-logout" type="button" aria-label="Logout">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
-            </svg>
-            <span>Logout</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Chat Layout Container: Sidebar + Main Content -->
       <div class="chat-layout-container">
-        <!-- Sidebar: Chat History -->
+        <!-- Sidebar: Left Column (Chat Branding + New Chat + Recent Conversations) -->
         <aside class="chat-sidebar" id="chat-sidebar">
           <div class="chat-sidebar-header">
-            <button type="button" class="btn-sidebar-new-chat" id="btn-sidebar-new-chat">
+            <div class="chat-sidebar-branding">
+              <img src="/assets/chat-logo-clean.png" alt="Jerryy's AI Logo" class="chat-sidebar-logo">
+              <span class="chat-sidebar-title">Jerryy's AI</span>
+            </div>
+            <button type="button" class="btn-sidebar-new-chat" id="btn-sidebar-new-chat" title="Start a New Conversation" aria-label="New Chat">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -2193,7 +2219,7 @@
               <span>+ New Chat</span>
             </button>
             <input id="chat-search" class="chat-search" type="search" maxlength="120" placeholder="Search chats" aria-label="Search chats">
-            <div class="chat-sidebar-section-title">Recent Chats</div>
+            <div class="chat-sidebar-section-title">Recent Conversations</div>
           </div>
           <div class="chat-history-list" id="chat-history-list">
             <div class="chat-history-empty" id="chat-history-empty">No conversations yet</div>
@@ -2202,7 +2228,20 @@
 
         <!-- Main Chat Area (Unified Jerryy's AI Mode) -->
         <main class="chat-main-area">
-          <!-- Chat Body -->
+          <!-- Main Chat Top Bar: Only Close Button [X] at Top Right -->
+          <div class="chat-main-header">
+            <button id="btn-sidebar-toggle" class="btn-sidebar-toggle" type="button" aria-label="Toggle chat history" title="Toggle chat history">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
+            </button>
+            <div class="chat-main-header-spacer"></div>
+            <button id="btn-close-kurama" class="btn-close-modal" aria-label="Close Jerryy's AI Dialog">×</button>
+          </div>
+
+          <!-- Chat Messages Body -->
           <div class="kurama-modal-body" id="kurama-chat-body">
             <div class="kurama-empty-state" id="kurama-empty-state">
               <div class="kurama-empty-tag">LOCAL AI ASSISTANT</div>
@@ -2225,8 +2264,8 @@
             <div id="attachment-drafts" aria-live="polite"></div>
             <input id="attachment-input" type="file" multiple hidden accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.txt,.md,.csv,.tsv,.py,.java,.js,.jsx,.ts,.tsx,.sql,.html,.css,.c,.cpp,.h,.hpp,.cs,.json,.sh,.bash,.ps1,.yaml,.yml,.xml,.toml,.ini,.rs,.go,.rb,.php,.swift,.kt,.vue,.svelte,.ipynb">
             <form class="kurama-input-form" id="kurama-chat-form">
-              <button type="button" id="btn-attach" class="message-action" title="Attach file" aria-label="Attach file">+</button>
-              <textarea maxlength="4000" id="kurama-input" class="kurama-text-input" rows="1" placeholder="Ask Jerryy's AI anything..."></textarea>
+              <button type="button" id="btn-attach" class="btn-attach" title="Attach file" aria-label="Attach file">+</button>
+              <textarea maxlength="4000" id="kurama-input" class="kurama-text-input" rows="1" placeholder="Message Jerryy's AI..."></textarea>
               <button type="button" class="btn-stop-generation" id="btn-stop-generation" aria-label="Stop generation" title="Stop generation">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                   <rect x="4" y="4" width="16" height="16" rx="2"></rect>
@@ -2242,6 +2281,19 @@
             </form>
           </div>
         </main>
+      </div>
+
+      <!-- Hidden compatibility elements for scripts -->
+      <div style="display: none !important;" aria-hidden="true">
+        <button id="btn-new-chat" type="button"></button>
+        <div id="ollama-status-badge"><span id="ollama-status-text"></span></div>
+        <div id="user-profile-bar">
+          <img id="user-avatar" src="" alt="">
+          <span id="user-name"></span>
+          <span id="user-email"></span>
+          <button id="btn-open-memory" type="button"></button>
+          <button id="btn-logout" type="button"></button>
+        </div>
       </div>
     </div>
   </div>
