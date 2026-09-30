@@ -41,7 +41,7 @@ class Database:
             raise HTTPException(503, 'Database unavailable. Please retry.')
         finally:
             if method != 'GET':
-                log.info('database_write_ms=%.1f', (time.perf_counter() - start) * 1000)
+                log.debug('database_write_ms=%.1f', (time.perf_counter() - start) * 1000)
         if r.status_code >= 400:
             try:
                 err = r.json()
