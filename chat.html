@@ -21,6 +21,12 @@
         }
       } catch (_) {}
     })();
+
+    try {
+      if (sessionStorage.getItem('chatEntrance') === 'from-intro') {
+        document.documentElement.classList.add('chat-entrance-pending');
+      }
+    } catch (_) {}
   </script>
 
   <meta charset="UTF-8" />
@@ -116,6 +122,25 @@
       height: 100vh;
       overflow: hidden;
       position: relative;
+    }
+
+    /* Bottom-to-full-screen entrance after completed Explore Model animation */
+    html.chat-entrance-pending .chat-desktop-root {
+      transform: translateY(100vh) !important;
+      opacity: 0 !important;
+    }
+
+    .chat-desktop-root.chat-rising-enter {
+      transform: translateY(100vh);
+      opacity: 0;
+      will-change: transform, opacity;
+    }
+
+    .chat-desktop-root.chat-rising-active {
+      transform: translateY(0);
+      opacity: 1;
+      transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1),
+                  opacity 400ms cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     /* =========================================================
@@ -600,13 +625,15 @@
       width: 36px;
       height: 36px;
       border-radius: 50%;
+      overflow: hidden;
       object-fit: cover;
+      object-position: center;
       flex-shrink: 0;
       margin-top: 2px;
     }
 
     .chat-msg-avatar.bot-avatar {
-      background: rgba(255, 255, 255, 0.06);
+      background: transparent;
       box-shadow: 0 0 16px rgba(168, 85, 247, 0.45);
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
@@ -1443,10 +1470,50 @@
 
   <!-- Page interaction scripts -->
   <script>
+    // Bottom-to-full entrance animation after intro completion
+    (function initChatEntrance() {
+      let isFromIntro = false;
+      try {
+        isFromIntro = sessionStorage.getItem('chatEntrance') === 'from-intro';
+        sessionStorage.removeItem('chatEntrance');
+      } catch (_) {}
+
+      const root = document.getElementById('chat-desktop-root');
+      if (!root) {
+        document.documentElement.classList.remove('chat-entrance-pending');
+        return;
+      }
+
+      if (!isFromIntro) {
+        document.documentElement.classList.remove('chat-entrance-pending');
+        return;
+      }
+
+      root.classList.add('chat-rising-enter');
+      document.documentElement.classList.remove('chat-entrance-pending');
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          root.classList.add('chat-rising-active');
+        });
+      });
+
+      root.addEventListener('transitionend', function onEnd(e) {
+        if (e.target === root && e.propertyName === 'transform') {
+          root.classList.remove('chat-rising-enter', 'chat-rising-active');
+          root.removeEventListener('transitionend', onEnd);
+        }
+      });
+    })();
+
     // Close button: navigates back to animation page ready state
     const btnClose = document.getElementById('btn-close-kurama');
     if (btnClose) {
       btnClose.addEventListener('click', () => {
+        try {
+          sessionStorage.setItem('loopstackMode', 'ready');
+          sessionStorage.setItem('loopstackReady', 'true');
+        } catch (_) {}
         window.location.href = '/#loopstack';
       });
     }

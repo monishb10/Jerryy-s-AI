@@ -726,11 +726,11 @@ for (const id of ['btn-new-chat', 'btn-sidebar-new-chat']) {
 $('btn-sidebar-toggle')?.addEventListener('click', () => $('chat-sidebar')?.classList.toggle('open'));
 
 $('btn-close-kurama')?.addEventListener('click', () => {
-  const m = $('kurama-modal');
-  if (m) m.classList.remove('open');
-  if (window.location.hash === '#chat') {
-    try { history.pushState(null, '', window.location.pathname); } catch {}
-  }
+  try {
+    sessionStorage.setItem('loopstackMode', 'ready');
+    sessionStorage.setItem('loopstackReady', 'true');
+  } catch (_) {}
+  window.location.href = '/#loopstack';
 });
 
 $('btn-logout')?.addEventListener('click', () => logout().catch(showError));

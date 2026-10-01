@@ -114,13 +114,16 @@ let toastTimer;function showToast(text){const node=document.getElementById("toas
 
     if (btnHeroLogout) btnHeroLogout.addEventListener('click', handleLogout);
 
-    // EXPLORE MODEL: Navigate to existing Jerryy's AI animation page
+    // EXPLORE MODEL: Navigate to existing Jerryy's AI animation page in INTRO MODE
     if (btnGetStarted) {
       btnGetStarted.addEventListener('click', (e) => {
         e.preventDefault();
-        try { sessionStorage.removeItem('loopstackReady'); } catch (_) {}
+        try {
+          sessionStorage.setItem('loopstackMode', 'intro');
+          sessionStorage.removeItem('loopstackReady');
+        } catch (_) {}
         if (typeof window.switchView === 'function') {
-          window.switchView('loopstack');
+          window.switchView('loopstack', 'intro');
         } else {
           window.location.hash = '#loopstack';
         }
@@ -129,8 +132,22 @@ let toastTimer;function showToast(text){const node=document.getElementById("toas
 
     const btnOpenKurama1 = document.getElementById('loopstack-hero-btn');
     const btnOpenKurama2 = document.getElementById('kurama-status-toggle');
-    if (btnOpenKurama1) btnOpenKurama1.addEventListener('click', () => { window.location.href = '/chat'; });
-    if (btnOpenKurama2) btnOpenKurama2.addEventListener('click', () => { window.location.href = '/chat'; });
+    if (btnOpenKurama1) btnOpenKurama1.addEventListener('click', () => {
+      try {
+        sessionStorage.setItem('loopstackMode', 'ready');
+        sessionStorage.setItem('loopstackReady', 'true');
+        sessionStorage.setItem('chatEntrance', 'from-intro');
+      } catch (_) {}
+      window.location.href = '/chat';
+    });
+    if (btnOpenKurama2) btnOpenKurama2.addEventListener('click', () => {
+      try {
+        sessionStorage.setItem('loopstackMode', 'ready');
+        sessionStorage.setItem('loopstackReady', 'true');
+        sessionStorage.setItem('chatEntrance', 'from-intro');
+      } catch (_) {}
+      window.location.href = '/chat';
+    });
 
     // =========================================================
     // AUTHENTICATION INITIALIZATION & 8-SECOND FAILSAFE TIMEOUT

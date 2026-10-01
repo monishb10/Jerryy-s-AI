@@ -2194,8 +2194,16 @@
       setTimeout(() => toastPill.classList.remove('show'), 2000);
     }
 
-    function switchView(viewName) {
+    function switchView(viewName, explicitMode) {
       if (viewName === 'loopstack') {
+        const mode = explicitMode || sessionStorage.getItem('loopstackMode') || (sessionStorage.getItem('loopstackReady') === 'true' ? 'ready' : 'intro');
+        sessionStorage.setItem('loopstackMode', mode);
+        if (mode === 'ready') {
+          sessionStorage.setItem('loopstackReady', 'true');
+        } else {
+          sessionStorage.removeItem('loopstackReady');
+        }
+
         viewCanvas.classList.remove('active-view');
         viewCanvas.classList.add('hidden-view');
 
@@ -2209,17 +2217,21 @@
         const bgVideo = document.getElementById('bg-video');
         if (bgVideo) bgVideo.play().catch(() => {});
 
-        // Re-trigger reveal animations or show ready state
-        initLoopstackReveals();
+        // Re-trigger reveal animations or show ready state according to mode
+        initLoopstackReveals(mode);
       } else {
         viewLoopstack.classList.remove('active-view');
         viewLoopstack.classList.add('hidden-view');
 
         viewCanvas.classList.remove('hidden-view');
         viewCanvas.classList.add('active-view');
+
+        // Clear hash and loopstack mode when returning to Welcome
         if (window.location.hash) {
           window.history.replaceState(null, '', window.location.pathname + window.location.search);
         }
+        sessionStorage.removeItem('loopstackMode');
+        sessionStorage.removeItem('loopstackReady');
       }
     }
     window.switchView = switchView;
@@ -2235,6 +2247,9 @@
     const btnLoopstackChat = document.getElementById('btn-loopstack-chat');
     if (btnLoopstackChat) {
       btnLoopstackChat.addEventListener('click', () => {
+        sessionStorage.setItem('loopstackMode', 'ready');
+        sessionStorage.setItem('loopstackReady', 'true');
+        sessionStorage.setItem('chatEntrance', 'from-intro');
         window.location.href = '/chat';
       });
     }
@@ -2242,7 +2257,8 @@
     // Handle back/forward browser history
     window.addEventListener('popstate', () => {
       if (window.location.hash === '#loopstack') {
-        switchView('loopstack');
+        const mode = sessionStorage.getItem('loopstackMode') || 'ready';
+        switchView('loopstack', mode);
       } else {
         switchView('canvas');
       }
@@ -2250,7 +2266,8 @@
 
     window.addEventListener('hashchange', () => {
       if (window.location.hash === '#loopstack') {
-        switchView('loopstack');
+        const mode = sessionStorage.getItem('loopstackMode') || 'ready';
+        switchView('loopstack', mode);
       } else {
         switchView('canvas');
       }
@@ -2266,9 +2283,12 @@
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
     }
 
-    // Check initial hash
+    // Check initial hash on page load
     if (window.location.hash === '#loopstack') {
-      switchView('loopstack');
+      const initialMode = sessionStorage.getItem('loopstackMode') || (sessionStorage.getItem('loopstackReady') === 'true' ? 'ready' : 'ready');
+      switchView('loopstack', initialMode);
+    } else {
+      switchView('canvas');
     }
 
     // =========================================================
@@ -2565,8 +2585,8 @@
     // =========================================================
     // LOOPSTACK LOGIC: REVEALS + CUSTOM CURSOR (VERBATIM)
     // =========================================================
-    function initLoopstackReveals() {
-      const isReady = sessionStorage.getItem('loopstackReady') === 'true';
+    function initLoopstackReveals(mode) {
+      const isReady = (mode === 'ready') || (sessionStorage.getItem('loopstackMode') === 'ready') || (sessionStorage.getItem('loopstackReady') === 'true');
 
       // 1. Slogan word-by-word reveal (existing Loopstack animation system)
       const sloganText = document.querySelector('.loopstack-slogan-text');
@@ -2631,27 +2651,22 @@
           function goToChat() {
             if (navigated) return;
             navigated = true;
+            sessionStorage.setItem('loopstackMode', 'ready');
             sessionStorage.setItem('loopstackReady', 'true');
+            sessionStorage.setItem('chatEntrance', 'from-intro');
             window.location.href = '/chat';
           }
 
           if (lastInner) {
-            lastInner.addEventListener('animationend', () => {
-              goToChat();
+            lastInner.addEventListener('animationend', (evt) => {
+              if (!evt.animationName || evt.animationName === 'letter-reveal-mask') {
+                goToChat();
+              }
             }, { once: true });
           }
-
-          // Failsafe in case animation was skipped or tab was backgrounded (existing 2400ms timeout)
-          setTimeout(() => {
-            if (sessionStorage.getItem('loopstackReady') !== 'true') {
-              goToChat();
-            }
-          }, 2400);
         }
       }
     }
-
-    initLoopstackReveals();
 
     // Cursor Ring Physics (Clean minimal ring without floating text)
     const cursorRing = document.getElementById('cursor-ring');
