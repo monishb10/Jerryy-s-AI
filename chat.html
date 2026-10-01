@@ -148,47 +148,18 @@
     .sidebar-branding-row {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 2px 2px;
-    }
-
-    .sidebar-logo-glow {
-      position: relative;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .sidebar-logo-glow::after {
-      content: '';
-      position: absolute;
-      inset: -3px;
-      border-radius: 50%;
-      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .sidebar-logo-img {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      object-fit: cover;
-      position: relative;
-      z-index: 1;
-      filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.5));
+      padding: 4px 2px;
     }
 
     .sidebar-brand-title {
-      font-family: var(--font-general);
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.45rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
       color: #ffffff;
-      text-transform: uppercase;
-      text-shadow: 0 0 20px rgba(255, 255, 255, 0.25);
+      text-transform: none;
+      text-shadow: 0 2px 14px rgba(0, 0, 0, 0.4);
+      line-height: 1.2;
     }
 
     /* + New Chat Button */
@@ -261,13 +232,13 @@
     }
 
     .chat-sidebar-section-title {
-      font-family: var(--font-mono);
-      font-size: 10.5px;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      color: rgba(255, 255, 255, 0.45);
+      font-family: var(--font-outfit), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 11.5px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      color: rgba(255, 255, 255, 0.42);
       text-transform: uppercase;
-      padding: 4px 2px 0;
+      padding: 6px 2px 2px;
     }
 
     /* History list */
@@ -579,21 +550,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .kurama-empty-badge {
-      font-family: var(--font-general);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.22em;
-      color: #c084fc;
-      text-transform: uppercase;
-      margin-bottom: 14px;
-      display: inline-block;
-      padding: 4px 14px;
-      border-radius: 999px;
-      background: rgba(168, 85, 247, 0.12);
-      border: 1px solid rgba(192, 132, 252, 0.25);
-    }
-
     .kurama-empty-title {
       font-family: var(--font-outfit);
       font-size: clamp(2rem, 3.5vw, 2.6rem);
@@ -610,36 +566,7 @@
       font-size: 1rem;
       color: var(--text-secondary);
       line-height: 1.6;
-      margin-bottom: 28px;
-    }
-
-    .kurama-chips-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-    }
-
-    .kurama-chip {
-      background: rgba(255, 255, 255, 0.07);
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      color: #ffffff;
-      padding: 9px 18px;
-      border-radius: 999px;
-      font-family: var(--font-outfit);
-      font-size: 0.88rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.25s var(--ease-smooth);
-    }
-
-    .kurama-chip:hover {
-      background: rgba(168, 85, 247, 0.28);
-      border-color: rgba(192, 132, 252, 0.6);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(168, 85, 247, 0.3);
+      margin-bottom: 0;
     }
 
     /* =========================================================
@@ -1349,12 +1276,9 @@
     <!-- LEFT SIDEBAR -->
     <aside class="chat-sidebar" id="chat-sidebar">
       <div class="sidebar-header">
-        <!-- Top branding row: Jerryy's AI Logo + JERRYY'S AI -->
+        <!-- Top branding row: Jerryy's AI -->
         <div class="sidebar-branding-row">
-          <div class="sidebar-logo-glow">
-            <img src="/assets/chat-logo-clean.png" alt="Jerryy's AI Logo" class="sidebar-logo-img">
-          </div>
-          <span class="sidebar-brand-title">JERRYY’S AI</span>
+          <span class="sidebar-brand-title">Jerryy's AI</span>
         </div>
 
         <!-- + New Chat button -->
@@ -1440,17 +1364,8 @@
       <!-- Scrollable Chat Messages Container -->
       <div class="chat-scroll-container" id="kurama-chat-body">
         <div class="kurama-empty-state" id="kurama-empty-state">
-          <div class="kurama-empty-badge">LOCAL AI ASSISTANT</div>
           <h1 class="kurama-empty-title">What can I help you with?</h1>
           <p class="kurama-empty-sub">Ask a question, explore an idea, write code, or solve problems with your personal assistant.</p>
-          <div class="kurama-chips-grid">
-            <button type="button" class="kurama-chip" data-prompt="Help me brainstorm ideas for ">Brainstorm</button>
-            <button type="button" class="kurama-chip" data-prompt="Help me write ">Write</button>
-            <button type="button" class="kurama-chip" data-prompt="Help me plan ">Plan</button>
-            <button type="button" class="kurama-chip" data-prompt="Summarize the following: ">Summarize</button>
-            <button type="button" class="kurama-chip" data-prompt="Help me solve this problem: ">Solve a Problem</button>
-            <button type="button" class="kurama-chip" data-prompt="Explain this simply: ">Explain Simply</button>
-          </div>
         </div>
       </div>
 
@@ -1560,18 +1475,7 @@
       });
     }
 
-    // Empty state suggestion chips
-    document.querySelectorAll('.kurama-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        const prompt = chip.getAttribute('data-prompt');
-        const inputEl = document.getElementById('kurama-input');
-        if (inputEl && prompt) {
-          inputEl.value = prompt;
-          inputEl.focus();
-          inputEl.selectionStart = inputEl.selectionEnd = inputEl.value.length;
-        }
-      });
-    });
+
   </script>
 
   <!-- Main Chat functionality -->
