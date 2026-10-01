@@ -114,12 +114,16 @@ let toastTimer;function showToast(text){const node=document.getElementById("toas
 
     if (btnHeroLogout) btnHeroLogout.addEventListener('click', handleLogout);
 
-    // EXPLORE MODEL: Navigate directly to /chat route
+    // EXPLORE MODEL: Navigate to existing Jerryy's AI animation page
     if (btnGetStarted) {
       btnGetStarted.addEventListener('click', (e) => {
         e.preventDefault();
         try { sessionStorage.removeItem('loopstackReady'); } catch (_) {}
-        window.location.href = '/chat';
+        if (typeof window.switchView === 'function') {
+          window.switchView('loopstack');
+        } else {
+          window.location.hash = '#loopstack';
+        }
       });
     }
 
