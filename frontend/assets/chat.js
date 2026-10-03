@@ -316,7 +316,7 @@ function renderMessages(autoscroll = false) {
 
     if (assistant) {
       const avatar = el('img', 'chat-msg-avatar bot-avatar');
-      avatar.src = '/assets/chat-logo-clean.png';
+      avatar.src = '/assets/jerryys-ai-avatar.png';
       avatar.alt = "Jerryy's AI";
       content = renderMarkdown(m.content);
       bubble.append(content);
@@ -378,7 +378,7 @@ function renderStatus() {
   if (active(state.job)) {
     row = el('div', 'chat-row bot');
     const avatar = el('img', 'chat-msg-avatar bot-avatar');
-    avatar.src = '/assets/chat-logo-clean.png';
+    avatar.src = '/assets/jerryys-ai-avatar.png';
     avatar.alt = "Jerryy's AI";
     const bubble = el('div', 'thinking-bubble');
     bubble.append(el('span', '', state.job.stop_requested ? 'Stopping…' : state.job.status === 'queued' ? 'Queued' : 'Thinking'));
