@@ -95,7 +95,10 @@ class GenerationManager:
             generation=asyncio.create_task(produce())
             while True:
                 done,_=await asyncio.wait([generation],timeout=.7)
-                stopped=await self.db.rpc('checkpoint',p_worker=self.worker,p_job=j['id'],p_content=join_continuation(j['base_content'],buffer))
+                try:
+                    stopped=await self.db.rpc('checkpoint',p_worker=self.worker,p_job=j['id'],p_content=join_continuation(j['base_content'],buffer))
+                except Exception:
+                    stopped=False
                 if stopped:
                     generation.cancel();await asyncio.gather(generation,return_exceptions=True);status='stopped';break
                 if done:

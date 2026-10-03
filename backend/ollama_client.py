@@ -138,7 +138,7 @@ async def extract_memories_with_ollama(user_message: str) -> Dict[str, Any]:
         "Return STRICT JSON only, with no markdown fences, matching this schema:\n"
         "{\n"
         '  "memories": [\n'
-        '    {"key": "name", "value": "Kannan", "category": "personal"}\n'
+        '    {"key": "favorite_movie", "value": "Interstellar", "category": "entertainment"}\n'
         "  ]\n"
         "}\n"
         "If there is nothing worth remembering:\n"
@@ -194,6 +194,11 @@ async def extract_memories_with_ollama(user_message: str) -> Dict[str, Any]:
 
             # Clean and normalize key
             k_clean = re.sub(r"[^\w\s-]", "", k).replace("-", "_").replace(" ", "_").strip("_")
+            if k_clean in ("name", "user_name"):
+                k_clean = "user_name"
+                if v.lower() in ("jerryy", "jerryy's ai", "jerryys ai", "jerryy's", "assistant", "ai", "bot"):
+                    continue
+
             if k_clean and v and len(k_clean) <= 50 and len(v) <= 500:
                 valid_memories.append({
                     "key": k_clean,
